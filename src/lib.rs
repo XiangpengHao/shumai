@@ -5,6 +5,7 @@ use std::{
 };
 
 mod pcm;
+mod runner;
 
 /// The context send to MultiBench::run()
 pub struct BenchContext<'a> {
