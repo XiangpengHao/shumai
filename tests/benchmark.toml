@@ -1,0 +1,5 @@
+[[foo]]
+name = "foo"
+threads = [1, 2, 3]
+time = 5
+a = [0, 1]

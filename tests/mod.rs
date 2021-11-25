@@ -5,23 +5,25 @@ mod test_config {
     use serde::Serialize;
     use shumai::ShumaiConfig;
 
-    pub trait ConfigImpl: Clone + Serialize {
-        fn name(&self) -> &String;
-        fn thread(&self) -> &[u64];
-        fn bench_sec(&self) -> usize;
-    }
-
-    #[derive(ShumaiConfig, Serialize, Clone)]
+    #[derive(ShumaiConfig, Serialize, Clone, Debug)]
     pub struct Foo {
-        name: String,
-        threads: Vec<u64>,
-        time: usize,
+        pub name: String,
+        pub threads: Vec<u64>,
+        pub time: usize,
         #[matrix]
-        a: usize,
+        pub a: usize,
     }
 }
 
 #[test]
-fn smoke() {
-    println!("ok");
+fn basic() {
+    let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
+        .expect("Failed to parse config!");
+
+    assert_eq!(config.len(), 2);
+    for (i, c) in config.iter().enumerate() {
+        assert_eq!(c.threads, vec![1, 2, 3]);
+        assert_eq!(c.time, 5);
+        assert_eq!(c.a, i);
+    }
 }

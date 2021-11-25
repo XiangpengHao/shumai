@@ -17,6 +17,7 @@ pub mod __dep {
     pub use serde;
     pub use serde_json;
     pub use toml;
+    pub use once_cell;
 }
 
 /// The context send to MultiBench::run()

@@ -18,3 +18,10 @@ colored = "2.0"
 chrono = "0.4.19"
 regex = "1.5.4"
 toml = "0.5.8"
+once_cell = "1.8.0"
+
+
+[[bin]]
+name = "debug_bin"
+path = "bin/debug_bin.rs"
+

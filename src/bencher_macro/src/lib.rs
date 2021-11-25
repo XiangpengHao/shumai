@@ -69,7 +69,7 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
     let methods = gen_methods(fields, 0, &name);
 
     let expanded = quote! {
-        #[derive(Debug, bencher::__dep::serde::Deserialize)]
+        #[derive(Debug, shumai::__dep::serde::Deserialize)]
         pub struct #mident {
             #(#config_fields, )*
         }
@@ -85,7 +85,7 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
         }
 
         impl #name {
-            pub fn is_match(&self, filter: &bencher::__dep::regex::Regex) -> bool {
+            pub fn is_match(&self, filter: &shumai::__dep::regex::Regex) -> bool {
                 filter.is_match(&self.name)
             }
 
@@ -93,12 +93,17 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
                 use super::BenchRootConfig;
                 BenchRootConfig::load().#lower_name()
             }
+
+            pub fn from_config(path: &std::path::Path) -> std::option::Option<std::vec::Vec<#name>> {
+                use super::BenchRootConfig;
+                BenchRootConfig::load_config(path).#lower_name()
+            }
         }
 
         unsafe impl Sync for #name {}
         unsafe impl Send for #name {}
 
-        impl bencher::BenchConfig for #name {
+        impl shumai::BenchConfig for #name {
             fn name(&self) -> &String {
                 &self.name
             }
@@ -153,15 +158,17 @@ pub fn bench_config(args: TokenStream, input: TokenStream) -> TokenStream {
                 for b in self.#lower_name.as_ref()?.iter(){
                     configs.extend(b.unfold());
                 }
-                let args: std::vec::Vec<String> = std::env::args().collect();
+
+                // println!("{:?}", configs);
+                // let args: std::vec::Vec<String> = std::env::args().collect();
 
 
-                let default_filter = ".*".to_string();
-                let filter_str = args.get(1).unwrap_or_else(|| &default_filter);
-                let bench_filter =
-                   bencher::__dep::regex::Regex::new(&filter_str).expect("failed to parse the benchmark filter into regex expression!");
+                // let default_filter = ".*".to_string();
+                // let filter_str = args.get(1).unwrap_or_else(|| &default_filter);
+                // let bench_filter =
+                //    shumai::__dep::regex::Regex::new(&filter_str).expect("failed to parse the benchmark filter into regex expression!");
 
-                let configs: std::vec::Vec<_> = configs.into_iter().filter(|c| c.is_match(&bench_filter)).collect();
+                // let configs: std::vec::Vec<_> = configs.into_iter().filter(|c| c.is_match(&bench_filter)).collect();
 
                 Some(configs)
             }
@@ -179,25 +186,21 @@ pub fn bench_config(args: TokenStream, input: TokenStream) -> TokenStream {
 
         #(#field_import)*
 
-        #[derive(bencher::__dep::serde::Deserialize)]
-        pub struct BenchRootConfig {
+        #[derive(shumai::__dep::serde::Deserialize, Debug)]
+        struct BenchRootConfig {
             #(#root_fields,)*
         }
 
         impl BenchRootConfig {
-            pub fn from_toml(path: &std::path::Path)-> Self {
+            fn load_config(path: &std::path::Path)-> Self {
                 let contents = std::fs::read_to_string(path).unwrap();
                 let configs: BenchRootConfig =
-                    bencher::__dep::toml::from_str(&contents).expect("Unable to parse the toml file");
+                    shumai::__dep::toml::from_str(&contents).expect("Unable to parse the toml file");
                 configs
             }
 
-            pub fn load() -> &'static Self{
-                static BENCH_CONFIG: once_cell::sync::OnceCell<BenchRootConfig> =
-                    once_cell::sync::OnceCell::new();
-                BENCH_CONFIG.get_or_init(|| {
-                    BenchRootConfig::from_toml(std::path::Path::new("benchmark.toml"))
-                })
+            fn load() -> Self {
+                BenchRootConfig::load_config(std::path::Path::new("benchmark.toml"))
             }
 
             #(#field_functions)*
