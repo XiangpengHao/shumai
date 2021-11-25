@@ -12,3 +12,7 @@ sys-info = "0.9.1"
 ureq = { version= "2", default-features = false, features = ["json"] }
 rustc_version = "0.4.0"
 bencher_macro = { path = "src/bencher_macro" }
+pprof = { version = "0.6.1", features = ["flamegraph"]}
+crossbeam-utils = "0.8.5"
+colored = "2.0"
+chrono = "0.4.19"

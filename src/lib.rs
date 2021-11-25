@@ -4,8 +4,15 @@ use std::{
     sync::atomic::{AtomicBool, AtomicU64, Ordering},
 };
 
+use serde::Serialize;
+
+mod env;
 mod pcm;
+mod result;
 mod runner;
+
+#[cfg(test)]
+mod tests;
 
 /// The context send to MultiBench::run()
 pub struct BenchContext<'a> {
@@ -37,7 +44,7 @@ pub trait BenchResult:
 {
 }
 
-pub trait BenchConfig {
+pub trait BenchConfig: Clone + Serialize {
     fn name(&self) -> &String;
     fn thread(&self) -> &[u64];
     fn bench_sec(&self) -> usize;

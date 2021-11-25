@@ -1,4 +1,9 @@
-use serde::Serialize;
+use crate::env::RunnerEnv;
+use crate::result::BenchData;
+use crate::{pcm::PcmStats, BenchConfig, BenchContext, MultiThreadBench};
+use colored::Colorize;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 
 pub struct Runner {
     sample_size: usize,
@@ -23,7 +28,7 @@ impl Runner {
         &self,
         thread_cnt: usize,
         f: &B,
-    ) -> (Vec<OneBenchResult<B>>, Vec<PcmStats>) {
+    ) -> (Vec<<B as MultiThreadBench>::Result>, Vec<PcmStats>) {
         let (sample, running_time) = match self.profile_time() {
             Some(t) => (1, Duration::from_secs(t as u64)),
             None => (
@@ -43,7 +48,7 @@ impl Runner {
                 let handlers: Vec<_> = (0..thread_cnt)
                     .map(|tid| {
                         let context = BenchContext {
-                            thread_id: tid as u64,
+                            thread_id: tid,
                             thread_cnt,
                             ready_thread: &ready_thread,
                             running: &is_running,
@@ -105,7 +110,7 @@ impl Runner {
 
                 let thrput = all_results
                     .iter()
-                    .fold(B::Result::default(), |v, h| v + h.0.clone());
+                    .fold(B::Result::default(), |v, h| v + h.clone());
 
                 println!("Iteration {} finished------------------\n{}\n", i, thrput);
 
@@ -123,10 +128,10 @@ impl Runner {
         &self,
         f: &B,
         thread_cnt: usize,
-        bench_results: Vec<(B::Result, MetricResult)>,
+        bench_results: Vec<B::Result>,
         pcm_stats: Vec<PcmStats>,
-    ) -> BenchResult<B::Config, B::Result> {
-        let bench_env = BenchmarkEnv::new();
+    ) -> BenchData<B::Config, B::Result> {
+        let bench_env = RunnerEnv::new();
 
         let pcm = if cfg!(feature = "pcm") {
             Some(pcm_stats)
@@ -134,11 +139,11 @@ impl Runner {
             None
         };
 
-        let results: Vec<_> = bench_results.iter().map(|v| v.0.clone()).collect();
+        let results: Vec<_> = bench_results.iter().map(|v| v.clone()).collect();
 
         let user_stats = f.additional_stats();
 
-        BenchResult {
+        BenchData {
             env: bench_env,
             thread_cnt,
             config: f.get_config().clone(),
@@ -172,7 +177,7 @@ impl Runner {
     pub fn start_bench<B: MultiThreadBench + 'static>(
         &self,
         f: &B,
-    ) -> Vec<BenchResult<B::Config, B::Result>> {
+    ) -> Vec<BenchData<B::Config, B::Result>> {
         let config = f.get_config();
 
         let running_time = match self.profile_time() {
@@ -180,123 +185,26 @@ impl Runner {
             None => Duration::from_secs(config.bench_sec() as u64),
         };
 
-        let reuse_load = f.reuse_load();
-
         let mut results = Vec::new();
 
-        if reuse_load {
+        for thread_cnt in config.thread().iter() {
             self.print_loading();
 
             f.load();
 
-            for thread_cnt in config.thread().iter() {
-                self.print_running(
-                    running_time.as_secs() as usize,
-                    config.name(),
-                    *thread_cnt as usize,
-                );
-                let (bench_results, pcm_stats) = self.bench_one(*thread_cnt as usize, f);
-                let result =
-                    self.extract_bench_results(f, *thread_cnt as usize, bench_results, pcm_stats);
-                results.push(result);
-            }
-        } else {
-            for thread_cnt in config.thread().iter() {
-                self.print_loading();
+            self.print_running(
+                running_time.as_secs() as usize,
+                config.name(),
+                *thread_cnt as usize,
+            );
 
-                f.load();
+            let (bench_results, pcm_stats) = self.bench_one(*thread_cnt as usize, f);
 
-                self.print_running(
-                    running_time.as_secs() as usize,
-                    config.name(),
-                    *thread_cnt as usize,
-                );
-
-                let (bench_results, pcm_stats) = self.bench_one(*thread_cnt as usize, f);
-
-                let result =
-                    self.extract_bench_results(f, *thread_cnt as usize, bench_results, pcm_stats);
-                results.push(result);
-            }
+            let result =
+                self.extract_bench_results(f, *thread_cnt as usize, bench_results, pcm_stats);
+            results.push(result);
         }
 
         results
-    }
-}
-
-#[derive(Debug, Serialize)]
-pub struct RunnerEnv {
-    os_release: String,
-    rustc_version: String,
-    hostname: String,
-    cpu_num: usize,
-    cpu_speed: u64,
-}
-
-impl Default for RunnerEnv {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl RunnerEnv {
-    pub fn new() -> Self {
-        let cpu_num = sys_info::cpu_num().unwrap() as usize;
-        let cpu_speed = sys_info::cpu_speed().unwrap();
-        let hostname = sys_info::hostname().unwrap();
-        let os_release = sys_info::os_release().unwrap();
-        let rustc_ver = rustc_version::version().unwrap();
-        let rustc_ver = format!(
-            "{}.{}.{}",
-            rustc_ver.major, rustc_ver.minor, rustc_ver.patch
-        );
-        Self {
-            cpu_num,
-            cpu_speed,
-            hostname,
-            os_release,
-            rustc_version: rustc_ver,
-        }
-    }
-}
-
-#[derive(Debug, Serialize)]
-pub struct BenchResult<T: Serialize + Clone + ConfigImpl, R: Serialize + Clone> {
-    pub config: T,
-    pub thread_cnt: usize,
-    pub env: BenchmarkEnv,
-    pub pcm: Option<Vec<PcmStats>>,
-    pub results: Vec<R>,
-    pub user_stats: Option<Value>,
-}
-
-impl<T: Serialize + Clone + ConfigImpl, R: Serialize + Clone> BenchResult<T, R> {
-    pub fn to_json(&self) -> String {
-        serde_json::to_string_pretty(self).unwrap()
-    }
-
-    pub fn write_json(&self) -> std::io::Result<()> {
-        let local_time = Local::now();
-        let file = format!(
-            "target/benchmark/{}-{:02}-{:02}/{:02}-{:02}-{}-{}.json",
-            local_time.year(),
-            local_time.month(),
-            local_time.day(),
-            local_time.hour(),
-            local_time.minute(),
-            self.thread_cnt,
-            self.config.name()
-        );
-        let path = Path::new(&file);
-        let json_str = self.to_json();
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        fs::write(path, json_str)?;
-        println!(
-            "{}",
-            format!("Benchmark results saved to file: {}", file).green()
-        );
-        Ok(())
     }
 }
