@@ -1,7 +1,7 @@
-use shumai::bench_config;
+use shumai::{bench_config, BenchContext, MultiThreadBench};
 
 #[bench_config]
-mod test_config {
+pub mod test_config {
     use serde::Serialize;
     use shumai::ShumaiConfig;
 
@@ -15,8 +15,25 @@ mod test_config {
     }
 }
 
+struct TestBench {}
+
+impl MultiThreadBench for TestBench {
+    type Result = usize;
+    type Config = Foo;
+
+    fn load(&self) {}
+
+    fn run(&self, context: BenchContext) -> Self::Result {
+        todo!()
+    }
+
+    fn cleanup(&self) {
+        todo!()
+    }
+}
+
 #[test]
-fn basic() {
+fn config() {
     let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
         .expect("Failed to parse config!");
 
@@ -25,5 +42,14 @@ fn basic() {
         assert_eq!(c.threads, vec![1, 2, 3]);
         assert_eq!(c.time, 5);
         assert_eq!(c.a, i);
+    }
+}
+
+#[test]
+fn runner() {
+    let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
+        .expect("Failed to parse config!");
+    for c in config.iter() {
+        let result = shumai::run(&TestBench {}, c, 3);
     }
 }

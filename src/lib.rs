@@ -11,13 +11,14 @@ pub(crate) mod pcm;
 mod result;
 mod runner;
 pub use bencher_macro::{bench_config, ShumaiConfig};
+pub use runner::run;
 
 pub mod __dep {
+    pub use once_cell;
     pub use regex;
     pub use serde;
     pub use serde_json;
     pub use toml;
-    pub use once_cell;
 }
 
 /// The context send to MultiBench::run()
@@ -50,6 +51,8 @@ pub trait BenchResult:
 {
 }
 
+impl BenchResult for usize {}
+
 pub trait BenchConfig: Clone + Serialize {
     fn name(&self) -> &String;
     fn thread(&self) -> &[u64];
@@ -71,8 +74,6 @@ pub trait MultiThreadBench: Send + Sync {
 
     /// clean up resources, if necessary
     fn cleanup(&self);
-
-    fn get_config(&self) -> &Self::Config;
 
     /// Additional stats user want to include in the benchmark result,
     /// Such as the struct size/alignment, runtime configurations
