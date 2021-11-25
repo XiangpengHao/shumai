@@ -1,7 +1,6 @@
 use chrono::{Datelike, Local, Timelike};
 use colored::Colorize;
 use serde::Serialize;
-use serde_json::Value;
 use std::path::Path;
 
 use crate::{env::RunnerEnv, pcm::PcmStats, BenchConfig};
@@ -13,7 +12,6 @@ pub struct BenchData<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> {
     pub env: RunnerEnv,
     pub pcm: Option<Vec<PcmStats>>,
     pub results: Vec<R>,
-    pub user_stats: Option<Value>,
 }
 
 impl<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> BenchData<T, R> {

@@ -63,6 +63,8 @@ pub trait BenchConfig: Clone + Serialize {
     fn bench_sec(&self) -> usize;
 }
 
+/// The call chain of a MultiThreadBench:
+/// load() -> run() [thread t1] -> run() [thread t2] -> ... -> cleanup()
 pub trait MultiThreadBench: Send + Sync {
     type Result: BenchResult;
     type Config: BenchConfig;
@@ -78,10 +80,4 @@ pub trait MultiThreadBench: Send + Sync {
 
     /// clean up resources, if necessary
     fn cleanup(&self);
-
-    /// Additional stats user want to include in the benchmark result,
-    /// Such as the struct size/alignment, runtime configurations
-    fn additional_stats(&self) -> Option<serde_json::Value> {
-        None
-    }
 }

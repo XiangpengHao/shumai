@@ -96,8 +96,6 @@ fn bench_thread<B: MultiThreadBench>(
             bench_results.push(thrput);
         })
         .unwrap();
-
-        f.cleanup();
     }
 
     (bench_results, pcm_stats)
@@ -120,15 +118,12 @@ fn assemble_bench_results<B: MultiThreadBench>(
 
     let results: Vec<_> = bench_results.iter().map(|v| v.clone()).collect();
 
-    let user_stats = f.additional_stats();
-
     BenchData {
         env: bench_env,
         thread_cnt,
         config: config.clone(),
         pcm,
         results,
-        user_stats,
     }
 }
 
@@ -168,13 +163,12 @@ pub fn run<B: MultiThreadBench>(
         None => Duration::from_secs(config.bench_sec() as u64),
     };
 
+    print_loading();
+    f.load();
+
     let mut results = Vec::new();
 
     for thread_cnt in config.thread().iter() {
-        print_loading();
-
-        f.load();
-
         print_running(
             running_time.as_secs() as usize,
             config.name(),
@@ -187,6 +181,8 @@ pub fn run<B: MultiThreadBench>(
             assemble_bench_results(f, *thread_cnt as usize, bench_results, pcm_stats, &config);
         results.push(result);
     }
+
+    f.cleanup();
 
     results
 }
