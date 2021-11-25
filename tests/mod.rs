@@ -24,12 +24,11 @@ impl MultiThreadBench for TestBench {
     fn load(&self) {}
 
     fn run(&self, context: BenchContext<Foo>) -> Self::Result {
-        todo!()
+        context.wait_for_start();
+        0
     }
 
-    fn cleanup(&self) {
-        todo!()
-    }
+    fn cleanup(&self) {}
 }
 
 #[test]
