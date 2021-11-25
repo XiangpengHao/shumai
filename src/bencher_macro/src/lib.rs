@@ -35,7 +35,7 @@ use syn::{parse_macro_input, DeriveInput};
 ///     pub fn is_match(&self, filter: &regex::Regex) -> bool;
 /// }
 /// ```
-#[proc_macro_derive(BenchConfig, attributes(matrix))]
+#[proc_macro_derive(ShumaiConfig, attributes(matrix))]
 pub fn derive_bench_config(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
     let name = ast.ident;

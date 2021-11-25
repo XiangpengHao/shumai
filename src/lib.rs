@@ -7,12 +7,17 @@ use std::{
 use serde::Serialize;
 
 mod env;
-mod pcm;
+pub(crate) mod pcm;
 mod result;
 mod runner;
+pub use bencher_macro::{bench_config, ShumaiConfig};
 
-#[cfg(test)]
-mod tests;
+pub mod __dep {
+    pub use regex;
+    pub use serde;
+    pub use serde_json;
+    pub use toml;
+}
 
 /// The context send to MultiBench::run()
 pub struct BenchContext<'a> {

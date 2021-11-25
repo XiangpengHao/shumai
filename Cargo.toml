@@ -16,3 +16,5 @@ pprof = { version = "0.6.1", features = ["flamegraph"]}
 crossbeam-utils = "0.8.5"
 colored = "2.0"
 chrono = "0.4.19"
+regex = "1.5.4"
+toml = "0.5.8"
