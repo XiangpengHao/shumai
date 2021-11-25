@@ -22,14 +22,15 @@ pub mod __dep {
 }
 
 /// The context send to MultiBench::run()
-pub struct BenchContext<'a> {
+pub struct BenchContext<'a, C: BenchConfig> {
     pub thread_id: usize,
     pub thread_cnt: usize,
+    pub config: &'a C,
     ready_thread: &'a AtomicU64,
     running: &'a AtomicBool,
 }
 
-impl BenchContext<'_> {
+impl<C: BenchConfig> BenchContext<'_, C> {
     /// Every MultiBench::run() should call context.wait_for_start() to let the main thread decide when to start running
     pub fn wait_for_start(&self) {
         self.ready_thread.fetch_add(1, Ordering::Relaxed);
@@ -45,6 +46,9 @@ impl BenchContext<'_> {
         self.thread_cnt
     }
 }
+
+unsafe impl<C: BenchConfig> Send for BenchContext<'_, C> {}
+unsafe impl<C: BenchConfig> Sync for BenchContext<'_, C> {}
 
 pub trait BenchResult:
     serde::Serialize + Default + AddAssign + Add<Output = Self> + Clone + Send + Sync + Display
@@ -70,7 +74,7 @@ pub trait MultiThreadBench: Send + Sync {
     /// run phase, run concurrent benchmark
     /// tid is not thread_id in unix, but the thread seq number, mostly from 0..thread_cnt
     /// it should also return an execution result, e.g., the # of total operations
-    fn run(&self, context: BenchContext) -> Self::Result;
+    fn run(&self, context: BenchContext<Self::Config>) -> Self::Result;
 
     /// clean up resources, if necessary
     fn cleanup(&self);

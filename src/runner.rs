@@ -29,6 +29,7 @@ fn bench_thread<B: MultiThreadBench>(
                     let context = BenchContext {
                         thread_id: tid,
                         thread_cnt,
+                        config,
                         ready_thread: &ready_thread,
                         running: &is_running,
                     };

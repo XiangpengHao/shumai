@@ -23,7 +23,7 @@ impl MultiThreadBench for TestBench {
 
     fn load(&self) {}
 
-    fn run(&self, context: BenchContext) -> Self::Result {
+    fn run(&self, context: BenchContext<Foo>) -> Self::Result {
         todo!()
     }
 
