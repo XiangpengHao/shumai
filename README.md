@@ -1,6 +1,6 @@
 # Shumai
 
-Shumai is a rust benchmark framework that helps to build efficient and correct multi-thread benchmark.
+Shumai is a rust benchmark framework that empowers efficient and correct multi-thread benchmarks.
 
 Shumai focus on reproducibility, easy-to-analyze and easy-to-use.
 
