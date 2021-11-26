@@ -71,7 +71,10 @@ fn runner() {
 
     for c in config.iter() {
         let benchmark = TestBench::default();
-        let _result = shumai::run(&benchmark, c, repeat);
+        let result = shumai::run(&benchmark, c, repeat);
+        for r in result.iter() {
+            r.write_json().unwrap();
+        }
 
         let mut gt = Vec::new();
         gt.push(ExecutionSeq::Load);

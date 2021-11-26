@@ -46,7 +46,7 @@ impl MultiThreadBench for TestBench {
 
 
 fn main() {
-	let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
+	let config = Foo::from_config(Path::new("benchmark.toml"))
         .expect("Failed to parse config!");
     let repeat = 3;
 
@@ -57,7 +57,41 @@ fn main() {
 	}
 }
 
-
-
 ```
+
+With the above setup, Shumai will write the benchmark results to json files to allow easy data integration:
+```json
+{
+  "config": {
+    "name": "foo-foo-2",
+    "threads": [
+      1,
+      2,
+      3
+    ],
+    "time": 1,
+    "a": 2
+  },
+  "thread_cnt": 1,
+  "env": {
+    "os_release": "5.10.60.1-microsoft-standard-WSL2",
+    "rustc_version": "1.58.0",
+    "hostname": "DESKTOP-DPOIAG6",
+    "cpu_num": 16,
+    "cpu_speed": 2894
+  },
+  "pcm": null,
+  "results": [
+    259603732,
+    264783286,
+    263255806
+  ]
+}
+```
+
+### Notable features
+- The `flamegraph` feature generates the flamegraph of the benchmark function (instead of the whole program) with zero config.
+
+- The `pcm` feature collects `pcm` related data, such as l3 cache hit/miss, memory bandwidth (including DRAM and PM), UPI bandwidth etc. It requires a pcm-server running on the target host.
+
 
