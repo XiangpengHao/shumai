@@ -35,10 +35,10 @@ impl MultiThreadBench for TestBench {
     fn load(&self) {}
 
     fn run(&self, context: BenchContext<Foo>) -> Self::Result {
-		// Barrier to ensure all threads start at the same time
+	// Barrier to ensure all threads start at the same time
         context.wait_for_start(); 
 
-		// start benchmark
+	// start benchmark
     }
 
     fn cleanup(&self) {}
@@ -46,15 +46,15 @@ impl MultiThreadBench for TestBench {
 
 
 fn main() {
-	let config = Foo::from_config(Path::new("benchmark.toml"))
+    let config = Foo::from_config(Path::new("benchmark.toml"))
         .expect("Failed to parse config!");
     let repeat = 3;
 
     for c in config.iter() {
         let benchmark = TestBench::default();
         let result = shumai::run(&benchmark, c, repeat);
-		result.to_json() // save results to a json file
-	}
+	result.to_json() // save results to a json file
+    }
 }
 
 ```
