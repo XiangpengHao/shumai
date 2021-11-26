@@ -1,5 +1,3 @@
-use std::sync::atomic::Ordering;
-
 use shumai::{bench_config, BenchContext, MultiThreadBench};
 
 #[bench_config]
@@ -74,6 +72,7 @@ fn runner() {
     for c in config.iter() {
         let benchmark = TestBench::default();
         let _result = shumai::run(&benchmark, c, repeat);
+
 
         let mut gt = Vec::new();
         gt.push(ExecutionSeq::Load);

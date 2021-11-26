@@ -102,7 +102,6 @@ fn bench_thread<B: MultiThreadBench>(
 }
 
 fn assemble_bench_results<B: MultiThreadBench>(
-    f: &B,
     thread_cnt: usize,
     bench_results: Vec<B::Result>,
     pcm_stats: Vec<PcmStats>,
@@ -178,7 +177,7 @@ pub fn run<B: MultiThreadBench>(
         let (bench_results, pcm_stats) = bench_thread(*thread_cnt as usize, config, repeat, f);
 
         let result =
-            assemble_bench_results(f, *thread_cnt as usize, bench_results, pcm_stats, &config);
+            assemble_bench_results::<B>(*thread_cnt as usize, bench_results, pcm_stats, &config);
         results.push(result);
     }
 
