@@ -1,3 +1,5 @@
+#![allow(clippy::needless_collect)]
+
 use crate::env::RunnerEnv;
 use crate::result::BenchData;
 use crate::{pcm::PcmStats, BenchConfig, BenchContext, MultiThreadBench};
@@ -34,10 +36,7 @@ fn bench_thread<B: MultiThreadBench>(
                         running: &is_running,
                     };
 
-                    scope.spawn(|_| {
-                        let result = f.run(context);
-                        result
-                    })
+                    scope.spawn(|_| f.run(context))
                 })
                 .collect();
 
@@ -115,7 +114,7 @@ fn assemble_bench_results<B: MultiThreadBench>(
         None
     };
 
-    let results: Vec<_> = bench_results.iter().map(|v| v.clone()).collect();
+    let results: Vec<_> = bench_results.to_vec();
 
     BenchData {
         env: bench_env,
@@ -177,7 +176,7 @@ pub fn run<B: MultiThreadBench>(
         let (bench_results, pcm_stats) = bench_thread(*thread_cnt as usize, config, repeat, f);
 
         let result =
-            assemble_bench_results::<B>(*thread_cnt as usize, bench_results, pcm_stats, &config);
+            assemble_bench_results::<B>(*thread_cnt as usize, bench_results, pcm_stats, config);
         results.push(result);
     }
 

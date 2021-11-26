@@ -58,7 +58,7 @@ fn config() {
     assert_eq!(config.len(), 2);
     for (i, c) in config.iter().enumerate() {
         assert_eq!(c.threads, vec![1, 2, 3]);
-        assert_eq!(c.time, 5);
+        assert_eq!(c.time, 1);
         assert_eq!(c.a, i);
     }
 }
@@ -72,7 +72,6 @@ fn runner() {
     for c in config.iter() {
         let benchmark = TestBench::default();
         let _result = shumai::run(&benchmark, c, repeat);
-
 
         let mut gt = Vec::new();
         gt.push(ExecutionSeq::Load);
