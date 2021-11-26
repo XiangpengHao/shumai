@@ -2,6 +2,9 @@
 name = "shumai"
 version = "0.1.0"
 edition = "2021"
+description = "A benchmark framework that empowers efficient and correct multi-thread benchmarks."
+keywords = ["benchmark", "multi-thread"]
+repository = "https://github.com/XiangpengHao/shumai"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,7 +14,7 @@ serde_json = "1"
 sys-info = "0.9.1"
 ureq = { version= "2", default-features = false, features = ["json"] }
 rustc_version = "0.4.0"
-bencher_macro = { path = "src/bencher_macro" }
+bencher_macro = { version = "0.1.0", path = "src/bencher_macro" }
 pprof = { version = "0.6.1", features = ["flamegraph"]}
 crossbeam-utils = "0.8.5"
 colored = "2.0"
