@@ -1,5 +1,5 @@
 [package]
-name = "bencher_macro"
+name = "shumai-config-impl"
 authors = ["Xiangpeng Hao <haoxiangpeng123@gmail.com>"]
 version = "0.1.0"
 edition = "2018"

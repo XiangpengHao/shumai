@@ -10,8 +10,8 @@ mod env;
 pub(crate) mod pcm;
 mod result;
 mod runner;
-pub use bencher_macro::{bench_config, ShumaiConfig};
 pub use runner::run;
+pub use shumai_config_impl::{bench_config, ShumaiConfig};
 
 pub mod __dep {
     pub use once_cell;

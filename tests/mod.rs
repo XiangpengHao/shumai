@@ -59,7 +59,7 @@ fn config() {
     for (i, c) in config.iter().enumerate() {
         assert_eq!(c.threads, vec![1, 2, 3]);
         assert_eq!(c.time, 1);
-        assert_eq!(c.a, i);
+        assert_eq!(c.a, i + 1);
     }
 }
 

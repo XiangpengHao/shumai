@@ -14,7 +14,7 @@ serde_json = "1"
 sys-info = "0.9.1"
 ureq = { version= "2", default-features = false, features = ["json"] }
 rustc_version = "0.4.0"
-bencher_macro = { version = "0.1.0", path = "src/bencher_macro" }
+shumai-config-impl = { path = "impl", version = "0.1.0" }
 pprof = { version = "0.6.1", features = ["flamegraph"]}
 crossbeam-utils = "0.8.5"
 colored = "2.0"
@@ -28,3 +28,8 @@ crossbeam = "0.8.1"
 [features]
 pcm = []
 flamegraph = ["pprof/flamegraph"]
+
+[workspace]
+members = [
+	"impl"
+]
