@@ -7,6 +7,7 @@ keywords = ["benchmark", "multi-thread"]
 repository = "https://github.com/XiangpengHao/shumai"
 readme = "README.md"
 authors = ["Xiangpeng Hao <haoxiangpeng123@gmail.com>"]
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

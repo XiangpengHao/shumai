@@ -7,6 +7,7 @@ repository = "https://github.com/XiangpengHao/shumai"
 keywords = ["benchmark", "multi-thread"]
 description = "A benchmark framework that empowers efficient and correct multi-thread benchmarks."
 readme = "../README.md"
+license = "MIT"
 
 [lib]
 proc-macro = true
