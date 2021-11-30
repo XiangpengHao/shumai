@@ -78,7 +78,7 @@ pub trait MultiThreadBench: Send + Sync {
     fn load(&self) -> Option<serde_json::Value>;
 
     /// Run concurrent benchmark
-    /// Inside this function should call context.wait_for_start() to notify the main thread; 
+    /// Inside this function should call context.wait_for_start() to notify the main thread;
     /// it also blocks current thread until every thread is ready (i.e. issued context.wait_for_start())
     fn run(&self, context: BenchContext<Self::Config>) -> Self::Result;
 
