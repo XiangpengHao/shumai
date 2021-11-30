@@ -1,7 +1,7 @@
 #![allow(clippy::needless_collect)]
 
 use crate::env::RunnerEnv;
-use crate::result::BenchData;
+use crate::result::{PerThreadResult, ShumaiResult};
 use crate::{pcm::PcmStats, BenchConfig, BenchContext, MultiThreadBench};
 use colored::Colorize;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -100,30 +100,20 @@ fn bench_thread<B: MultiThreadBench>(
     (bench_results, pcm_stats)
 }
 
-fn assemble_bench_results<B: MultiThreadBench>(
-    thread_cnt: usize,
-    bench_results: Vec<B::Result>,
-    pcm_stats: Vec<PcmStats>,
-    config: &B::Config,
-) -> BenchData<B::Config, B::Result> {
-    let bench_env = RunnerEnv::new();
+// fn assemble_bench_results<B: MultiThreadBench>(
+//     thread_cnt: usize,
+//     bench_results: Vec<B::Result>,
+//     pcm_stats: Vec<PcmStats>,
+//     config: &B::Config,
+// ) -> PerThreadResult<B::Result> {
+//     let bench_env = RunnerEnv::new();
 
-    let pcm = if cfg!(feature = "pcm") {
-        Some(pcm_stats)
-    } else {
-        None
-    };
-
-    let results: Vec<_> = bench_results.to_vec();
-
-    BenchData {
-        env: bench_env,
-        thread_cnt,
-        config: config.clone(),
-        pcm,
-        results,
-    }
-}
+//     PerThreadResult {
+//         thread_cnt,
+//         bench_results,
+//         pcm,
+//     }
+// }
 
 fn is_profile_by_time() -> Option<usize> {
     let profile_time = std::env::var("PROFILE_TIME").ok()?;
@@ -155,16 +145,16 @@ pub fn run<B: MultiThreadBench>(
     f: &B,
     config: &B::Config,
     repeat: usize,
-) -> Vec<BenchData<B::Config, B::Result>> {
+) -> ShumaiResult<B::Config, B::Result> {
     let running_time = match is_profile_by_time() {
         Some(t) => Duration::from_secs(t as u64),
         None => Duration::from_secs(config.bench_sec() as u64),
     };
 
     print_loading();
-    f.load();
-
-    let mut results = Vec::new();
+    let load_result = f.load();
+    let mut results: ShumaiResult<B::Config, B::Result> =
+        ShumaiResult::new(config.clone(), load_result, RunnerEnv::new());
 
     for thread_cnt in config.thread().iter() {
         print_running(
@@ -175,9 +165,14 @@ pub fn run<B: MultiThreadBench>(
 
         let (bench_results, pcm_stats) = bench_thread(*thread_cnt as usize, config, repeat, f);
 
-        let result =
-            assemble_bench_results::<B>(*thread_cnt as usize, bench_results, pcm_stats, config);
-        results.push(result);
+        results.add_thread_result(PerThreadResult {
+            thread_cnt: *thread_cnt,
+            bench_results,
+            pcm: pcm_stats,
+        });
+        // let result =
+        //     assemble_bench_results::<B>(*thread_cnt as usize, bench_results, pcm_stats, config);
+        // results.push(result);
     }
 
     f.cleanup();

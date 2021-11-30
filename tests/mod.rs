@@ -1,14 +1,15 @@
-use shumai::{bench_config, BenchContext, MultiThreadBench};
+use serde_json::Value;
+use shumai::{bench_config, BenchContext, MultiThreadBench, ShumaiResult};
 
 #[bench_config]
 pub mod test_config {
-    use serde::Serialize;
+    use serde::{Deserialize, Serialize};
     use shumai::ShumaiConfig;
 
-    #[derive(ShumaiConfig, Serialize, Clone, Debug)]
+    #[derive(ShumaiConfig, Serialize, Deserialize, Clone, Debug)]
     pub struct Foo {
         pub name: String,
-        pub threads: Vec<u64>,
+        pub threads: Vec<usize>,
         pub time: usize,
         #[matrix]
         pub a: usize,
@@ -31,8 +32,9 @@ impl MultiThreadBench for TestBench {
     type Result = usize;
     type Config = Foo;
 
-    fn load(&self) {
+    fn load(&self) -> Option<Value> {
         self.execution_queue.push(ExecutionSeq::Load);
+        None
     }
 
     fn run(&self, context: BenchContext<Foo>) -> Self::Result {
@@ -71,10 +73,7 @@ fn runner() {
 
     for c in config.iter() {
         let benchmark = TestBench::default();
-        let result = shumai::run(&benchmark, c, repeat);
-        for r in result.iter() {
-            r.write_json().unwrap();
-        }
+        let _result = shumai::run(&benchmark, c, repeat);
 
         let mut gt = Vec::new();
         gt.push(ExecutionSeq::Load);
@@ -97,5 +96,24 @@ fn runner() {
         for i in 0..rv_seq.len() {
             assert_eq!(gt[i], rv_seq[i]);
         }
+    }
+}
+
+#[test]
+fn write_json() {
+    let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
+        .expect("Failed to parse config!");
+    let repeat = 1;
+
+    for c in config.iter() {
+        let benchmark = TestBench::default();
+        let result = shumai::run(&benchmark, c, repeat);
+        let file_path = result.write_json().unwrap();
+
+        let written_data = std::fs::read_to_string(file_path).unwrap();
+        let result: ShumaiResult<Foo, usize> = serde_json::from_str(&written_data).unwrap();
+        assert_eq!(result.config.time, 1);
+        assert_eq!(result.config.threads, vec![1, 2, 3]);
+        assert_eq!(result.bench_results.len(), 3);
     }
 }

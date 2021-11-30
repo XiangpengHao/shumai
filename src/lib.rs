@@ -10,6 +10,7 @@ mod env;
 pub(crate) mod pcm;
 mod result;
 mod runner;
+pub use result::ShumaiResult;
 pub use runner::run;
 pub use shumai_config_impl::{bench_config, ShumaiConfig};
 
@@ -59,7 +60,7 @@ impl BenchResult for usize {}
 
 pub trait BenchConfig: Clone + Serialize {
     fn name(&self) -> &String;
-    fn thread(&self) -> &[u64];
+    fn thread(&self) -> &[usize];
     fn bench_sec(&self) -> usize;
 }
 
@@ -71,7 +72,7 @@ pub trait MultiThreadBench: Send + Sync {
 
     /// The benchmark should init their code, load the necessary data and warmup the resources
     /// Note that the `load` will only be called once, no matter what `sample_size` is.
-    fn load(&self);
+    fn load(&self) -> Option<serde_json::Value>;
 
     /// run phase, run concurrent benchmark
     /// tid is not thread_id in unix, but the thread seq number, mostly from 0..thread_cnt

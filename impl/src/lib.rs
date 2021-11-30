@@ -108,7 +108,7 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
                 &self.name
             }
 
-            fn thread(&self) -> &[u64] {
+            fn thread(&self) -> &[usize] {
                 &self.threads
             }
 
