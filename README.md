@@ -1,6 +1,7 @@
 # Shumai
 [![Crates.io](https://img.shields.io/crates/v/shumai.svg)](
 https://crates.io/crates/shumai)
+[![shumai](https://github.com/XiangpengHao/shumai/actions/workflows/ci.yml/badge.svg)](https://github.com/XiangpengHao/shumai/actions/workflows/ci.yml)
 
 Shumai is a rust benchmark framework that empowers efficient and correct multi-thread benchmarks.
 
