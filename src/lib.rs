@@ -32,10 +32,13 @@ pub struct BenchContext<'a, C: BenchConfig> {
 }
 
 impl<C: BenchConfig> BenchContext<'_, C> {
-    /// Every MultiBench::run() should call context.wait_for_start() to let the main thread decide when to start running
+    /// A barrier to ensure all threads start at exactly the same time,
+    /// every run() should call context.wait_for_start() right after initialization or it will block forever.
     pub fn wait_for_start(&self) {
         self.ready_thread.fetch_add(1, Ordering::Relaxed);
-        while !self.is_running() {}
+        while !self.is_running() {
+            std::hint::spin_loop();
+        }
     }
 
     /// Main thread will let each bencher know whether to stop running
@@ -74,9 +77,9 @@ pub trait MultiThreadBench: Send + Sync {
     /// Note that the `load` will only be called once, no matter what `sample_size` is.
     fn load(&self) -> Option<serde_json::Value>;
 
-    /// run phase, run concurrent benchmark
-    /// tid is not thread_id in unix, but the thread seq number, mostly from 0..thread_cnt
-    /// it should also return an execution result, e.g., the # of total operations
+    /// Run concurrent benchmark
+    /// Inside this function should call context.wait_for_start() to notify the main thread; 
+    /// it also blocks current thread until every thread is ready (i.e. issued context.wait_for_start())
     fn run(&self, context: BenchContext<Self::Config>) -> Self::Result;
 
     /// clean up resources, if necessary
