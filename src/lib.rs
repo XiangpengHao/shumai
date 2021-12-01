@@ -6,8 +6,8 @@ use std::{
 
 use serde::Serialize;
 
+mod counters;
 mod env;
-pub(crate) mod pcm;
 mod result;
 mod runner;
 pub use result::ShumaiResult;
@@ -69,7 +69,7 @@ pub trait BenchConfig: Clone + Serialize {
 
 /// The call chain of a MultiThreadBench:
 /// load() -> run() [thread t1] -> run() [thread t2] -> ... -> cleanup()
-pub trait MultiThreadBench: Send + Sync {
+pub trait ShumaiBench: Send + Sync {
     type Result: BenchResult;
     type Config: BenchConfig;
 

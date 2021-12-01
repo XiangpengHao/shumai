@@ -1,5 +1,5 @@
 use serde_json::Value;
-use shumai::{bench_config, BenchContext, MultiThreadBench, ShumaiResult};
+use shumai::{bench_config, BenchContext, ShumaiBench, ShumaiResult};
 
 #[bench_config]
 pub mod test_config {
@@ -28,7 +28,7 @@ struct TestBench {
     execution_queue: crossbeam::queue::SegQueue<ExecutionSeq>,
 }
 
-impl MultiThreadBench for TestBench {
+impl ShumaiBench for TestBench {
     type Result = usize;
     type Config = Foo;
 

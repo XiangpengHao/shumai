@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{path::PathBuf, str::FromStr};
 
-use crate::{env::RunnerEnv, pcm::PcmStats, BenchConfig};
+use crate::{counters::pcm::PcmStats, env::RunnerEnv, BenchConfig};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ShumaiResult<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> {
@@ -24,7 +24,7 @@ impl<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> ShumaiResult<T, R
         }
     }
 
-    pub(crate) fn add_thread_result(&mut self, result: PerThreadResult<R>) {
+    pub(crate) fn add_result(&mut self, result: PerThreadResult<R>) {
         self.bench_results.push(result);
     }
 

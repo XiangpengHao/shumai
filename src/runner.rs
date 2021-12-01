@@ -2,17 +2,17 @@
 
 use crate::env::RunnerEnv;
 use crate::result::{PerThreadResult, ShumaiResult};
-use crate::{pcm::PcmStats, BenchConfig, BenchContext, MultiThreadBench};
+use crate::{counters::pcm::PcmStats, BenchConfig, BenchContext, ShumaiBench};
 use colored::Colorize;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
-fn bench_thread<B: MultiThreadBench>(
+fn bench_thread<B: ShumaiBench>(
     thread_cnt: usize,
     config: &B::Config,
     sample_size: usize,
     f: &B,
-) -> (Vec<<B as MultiThreadBench>::Result>, Vec<PcmStats>) {
+) -> (Vec<<B as ShumaiBench>::Result>, Vec<PcmStats>) {
     let (sample, running_time) = match is_profile_by_time() {
         Some(t) => (1, Duration::from_secs(t as u64)),
         None => (sample_size, Duration::from_secs(config.bench_sec() as u64)),
@@ -100,21 +100,6 @@ fn bench_thread<B: MultiThreadBench>(
     (bench_results, pcm_stats)
 }
 
-// fn assemble_bench_results<B: MultiThreadBench>(
-//     thread_cnt: usize,
-//     bench_results: Vec<B::Result>,
-//     pcm_stats: Vec<PcmStats>,
-//     config: &B::Config,
-// ) -> PerThreadResult<B::Result> {
-//     let bench_env = RunnerEnv::new();
-
-//     PerThreadResult {
-//         thread_cnt,
-//         bench_results,
-//         pcm,
-//     }
-// }
-
 fn is_profile_by_time() -> Option<usize> {
     let profile_time = std::env::var("PROFILE_TIME").ok()?;
     profile_time.parse::<usize>().ok()
@@ -141,7 +126,7 @@ fn print_running(running_time: usize, name: &str, thread_cnt: usize) {
 }
 
 #[must_use = "bench function returns the bench results"]
-pub fn run<B: MultiThreadBench>(
+pub fn run<B: ShumaiBench>(
     f: &B,
     config: &B::Config,
     repeat: usize,
@@ -165,14 +150,11 @@ pub fn run<B: MultiThreadBench>(
 
         let (bench_results, pcm_stats) = bench_thread(*thread_cnt as usize, config, repeat, f);
 
-        results.add_thread_result(PerThreadResult {
+        results.add_result(PerThreadResult {
             thread_cnt: *thread_cnt,
             bench_results,
             pcm: pcm_stats,
         });
-        // let result =
-        //     assemble_bench_results::<B>(*thread_cnt as usize, bench_results, pcm_stats, config);
-        // results.push(result);
     }
 
     f.cleanup();
