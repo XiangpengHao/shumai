@@ -119,7 +119,7 @@ fn write_json() {
 }
 
 #[test]
-// #[cfg(feature = "perf")]
+#[cfg(feature = "perf")]
 fn simple_perf() {
     let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
         .expect("Failed to parse config!");

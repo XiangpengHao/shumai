@@ -92,9 +92,11 @@ With the above setup, Shumai will write the benchmark results to json files to a
 }
 ```
 
-### Notable features
+### Features
 - The `flamegraph` feature generates the flamegraph of the benchmark function (instead of the whole program) with zero config.
 
 - The `pcm` feature collects `pcm` related data, such as l3 cache hit/miss, memory bandwidth (including DRAM and PM), UPI bandwidth etc. It requires a pcm-server running on the target host.
 
+- The `perf` feature collects common perf stats, such as `CPU_CYCLES`, `INSTRUCTIONS`, `BRANCH_MISSES` etc.
 
+Note that the above features may be mutual exclusive, i.e. you may enable one feature at a time.
