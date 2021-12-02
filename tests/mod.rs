@@ -69,7 +69,7 @@ fn config() {
 fn runner() {
     let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
         .expect("Failed to parse config!");
-    let repeat = 3;
+    let repeat = 2;
 
     for c in config.iter() {
         let benchmark = TestBench::default();
@@ -100,6 +100,7 @@ fn runner() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn write_json() {
     let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
         .expect("Failed to parse config!");

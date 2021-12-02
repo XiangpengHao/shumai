@@ -16,6 +16,18 @@ impl Default for RunnerEnv {
 }
 
 impl RunnerEnv {
+    #[cfg(miri)]
+    pub fn new() -> Self {
+        Self {
+            cpu_num: 0,
+            cpu_speed: 0,
+            hostname: "".to_string(),
+            os_release: "".to_string(),
+            rustc_version: "".to_string(),
+        }
+    }
+
+    #[cfg(not(miri))]
     pub fn new() -> Self {
         let cpu_num = sys_info::cpu_num().unwrap() as usize;
         let cpu_speed = sys_info::cpu_speed().unwrap();
