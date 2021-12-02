@@ -119,7 +119,7 @@ fn write_json() {
 }
 
 #[test]
-#[cfg(feature = "perf")]
+// #[cfg(feature = "perf")]
 fn simple_perf() {
     let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
         .expect("Failed to parse config!");
@@ -129,7 +129,7 @@ fn simple_perf() {
     let benchmark = TestBench::default();
     let result = shumai::run(&benchmark, c, repeat);
     let bench_results = result.bench_results;
-    assert_eq!(bench_results.len(), repeat);
+    assert_eq!(bench_results.len(), c.threads.len());
     for rv in bench_results {
         let perf = rv.perf.expect("perf should be non-empty");
         // These counters should all be positive

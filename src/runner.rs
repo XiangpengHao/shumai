@@ -5,8 +5,22 @@ use crate::env::RunnerEnv;
 use crate::result::{ShumaiResult, ThreadResult};
 use crate::{counters::pcm::PcmStats, BenchConfig, BenchContext, ShumaiBench};
 use colored::Colorize;
+use std::process;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
+
+struct ThreadPoison;
+impl Drop for ThreadPoison {
+    fn drop(&mut self) {
+        if std::thread::panicking() {
+            println!(
+                "Benchmark thread {:?} panicked, terminating all other threads...",
+                std::thread::current().id()
+            );
+            process::exit(1);
+        }
+    }
+}
 
 fn bench_one_sample<B: ShumaiBench>(
     thread_cnt: usize,
@@ -30,9 +44,10 @@ fn bench_one_sample<B: ShumaiBench>(
                 };
 
                 scope.spawn(|_| {
+                    let _thread_guard = ThreadPoison;
                     let perf_stats = if cfg!(feature = "perf") {
                         let mut perf = PerfStatsRaw::new();
-                        perf.start().expect("unable to start perf");
+                        perf.enable().expect("unable to enable perf");
                         Some(perf)
                     } else {
                         None
@@ -41,7 +56,7 @@ fn bench_one_sample<B: ShumaiBench>(
                     let rv = f.run(context);
 
                     let perf_stats = perf_stats.map(|mut p| {
-                        p.stop().expect("unable to stop perf");
+                        p.disable().expect("unable to disable perf");
                         p
                     });
 

@@ -1,27 +1,23 @@
 use perf_event::events::{Hardware, Software};
-use perf_event::{Builder, Counter, Group};
+use perf_event::{Builder, Counter};
 use serde::{Deserialize, Serialize};
 use std::ops::{Add, AddAssign};
 
 macro_rules! perf_builder {
     ($(($name:ident, $event:expr)),+) => {
         pub(crate) struct PerfStatsRaw{
-            group: Group,
             $($name: Counter,)+
         }
 
         impl PerfStatsRaw {
             pub(crate) fn new() -> PerfStatsRaw {
-                let mut group = Group::new().expect("failed to create perf group");
                 $(let $name = Builder::new()
-                    .group(&mut group)
                     .kind($event)
                     .build()
                     .expect(&format!("failed to create counter for {}", std::stringify!($name)));
                 )+
 
                 PerfStatsRaw{
-                    group,
                     $($name,)+
                 }
             }
@@ -59,26 +55,24 @@ macro_rules! perf_builder {
 
         impl PerfStatsRaw {
             pub(crate) fn get_stats(&mut self) -> std::io::Result<PerfCounter> {
-                let raw_counts = self.group.read()?;
-
                 let stats = PerfCounter {
-                    $($name: raw_counts[&self.$name], )+
+                    $($name: self.$name.read()?, )+
                 };
 
                 Ok(stats)
             }
+
+            pub(crate) fn enable(&mut self) -> std::io::Result<()> {
+                $(self.$name.enable()?;)+
+                Ok(())
+            }
+
+            pub(crate) fn disable(&mut self) -> std::io::Result<()> {
+                $(self.$name.disable()?;)+
+                Ok(())
+            }
         }
     };
-}
-
-impl PerfStatsRaw {
-    pub(crate) fn start(&mut self) -> std::io::Result<()> {
-        self.group.enable()
-    }
-
-    pub(crate) fn stop(&mut self) -> std::io::Result<()> {
-        self.group.disable()
-    }
 }
 
 perf_builder!(
