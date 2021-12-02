@@ -12,12 +12,12 @@ macro_rules! perf_builder {
 
         impl PerfStatsRaw {
             pub(crate) fn new() -> PerfStatsRaw {
-                let mut group = Group::new().unwrap();
+                let mut group = Group::new().expect("failed to create perf group");
                 $(let $name = Builder::new()
                     .group(&mut group)
                     .kind($event)
                     .build()
-                    .unwrap();
+                    .expect(&format!("failed to create counter for {}", std::stringify!($name)));
                 )+
 
                 PerfStatsRaw{
@@ -28,8 +28,8 @@ macro_rules! perf_builder {
         }
 
         #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-        pub(crate) struct PerfCounter {
-            $($name: u64,)+
+        pub struct PerfCounter {
+            $(pub $name: u64,)+
         }
 
         impl PerfCounter{
