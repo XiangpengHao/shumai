@@ -1,4 +1,4 @@
-#![allow(clippy::needless_collect)]
+#![allow(clippy::needless_collect, clippy::type_complexity)]
 
 use crate::counters::perf::{PerfCounter, PerfStatsRaw};
 use crate::env::RunnerEnv;
@@ -114,7 +114,7 @@ fn bench_one_sample<B: ShumaiBench>(
             )
         };
 
-        return (thrput, perf_counter, pcm_stats);
+        (thrput, perf_counter, pcm_stats)
     })
     .unwrap()
 }
