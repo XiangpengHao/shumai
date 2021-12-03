@@ -66,28 +66,48 @@ With the above setup, Shumai will write the benchmark results to json files to a
 ```json
 {
   "config": {
-    "name": "foo-foo-2",
+    "name": "foo-foo-1",
     "threads": [
       1,
       2,
       3
     ],
     "time": 1,
-    "a": 2
+    "a": 1
   },
-  "thread_cnt": 1,
+  "load_results": null,
   "env": {
     "os_release": "5.10.60.1-microsoft-standard-WSL2",
-    "rustc_version": "1.58.0",
+    "rustc_version": "1.59.0",
     "hostname": "DESKTOP-DPOIAG6",
     "cpu_num": 16,
     "cpu_speed": 2894
   },
-  "pcm": null,
-  "results": [
-    259603732,
-    264783286,
-    263255806
+  "bench_results": [
+    {
+      "thread_cnt": 1,
+      "bench_results": [
+        110484492
+      ],
+      "pcm": [],
+      "perf": null
+    },
+    {
+      "thread_cnt": 2,
+      "bench_results": [
+        222437918
+      ],
+      "pcm": [],
+      "perf": null
+    },
+    {
+      "thread_cnt": 3,
+      "bench_results": [
+        315043334
+      ],
+      "pcm": [],
+      "perf": null
+    }
   ]
 }
 ```

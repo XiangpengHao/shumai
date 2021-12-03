@@ -66,6 +66,7 @@ fn config() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn runner() {
     let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
         .expect("Failed to parse config!");
@@ -121,6 +122,7 @@ fn write_json() {
 
 #[test]
 #[cfg(feature = "perf")]
+#[cfg_attr(miri, ignore)]
 fn simple_perf() {
     let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
         .expect("Failed to parse config!");
