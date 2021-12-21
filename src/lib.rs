@@ -49,6 +49,10 @@ impl<C: BenchConfig> BenchContext<'_, C> {
     pub fn thread_cnt(&self) -> usize {
         self.thread_cnt
     }
+
+    pub fn thread_id(&self) -> usize {
+        self.thread_id
+    }
 }
 
 unsafe impl<C: BenchConfig> Send for BenchContext<'_, C> {}
