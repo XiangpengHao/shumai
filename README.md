@@ -25,7 +25,7 @@ a = [1, 2]
 #[derive(ShumaiConfig, Serialize, Clone, Debug)]
 pub struct Foo {
 	pub name: String,
-	pub threads: Vec<u64>,
+	pub threads: Vec<usize>,
 	pub time: usize,
 	#[matrix]
 	pub a: usize,
