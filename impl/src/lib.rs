@@ -69,54 +69,54 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
     let methods = gen_methods(fields, 0, &name);
 
     let expanded = quote! {
-            #[derive(Debug, shumai::__dep::serde::Deserialize)]
-            pub struct #mident {
-                #(#config_fields, )*
+        #[derive(Debug, shumai::__dep::serde::Deserialize)]
+        pub struct #mident {
+            #(#config_fields, )*
+        }
+
+        impl #mident {
+            pub fn unfold(&self) -> std::vec::Vec<#name> {
+                let mut configs: std::vec::Vec<#name> = std::vec::Vec::new();
+
+                #methods
+
+                configs
+            }
+        }
+
+        impl #name {
+            pub fn load_config_filter(path: impl AsRef<std::path::Path>, filter: impl AsRef<str>) -> std::option::Option<std::vec::Vec<#name>> {
+                use super::BenchRootConfig;
+                let configs = BenchRootConfig::load_config(path.as_ref()).#lower_name()?;
+
+                let regex_filter =
+                            shumai::__dep::regex::Regex::new(filter.as_ref()).expect("failed to parse the benchmark filter into regex expression!");
+                let configs: std::vec::Vec<_> = configs.into_iter().filter(|c| regex_filter.is_match(&c.name)).collect();
+                Some(configs)
             }
 
-            impl #mident {
-                pub fn unfold(&self) -> std::vec::Vec<#name> {
-                    let mut configs: std::vec::Vec<#name> = std::vec::Vec::new();
+            pub fn load_config(path: impl AsRef<std::path::Path>) -> std::option::Option<std::vec::Vec<#name>> {
+                #name::load_config_filter(path, ".*")
+            }
+        }
 
-                    #methods
+        unsafe impl Sync for #name {}
+        unsafe impl Send for #name {}
 
-                    configs
-                }
+        impl shumai::BenchConfig for #name {
+            fn name(&self) -> &String {
+                &self.name
             }
 
-            impl #name {
-                pub fn load_config_filter(path: impl AsRef<std::path::Path>, filter: impl AsRef<str>) -> std::option::Option<std::vec::Vec<#name>> {
-                    use super::BenchRootConfig;
-                    let configs = BenchRootConfig::load_config(path.as_ref()).#lower_name()?;
-
-                    let regex_filter =
-                                shumai::__dep::regex::Regex::new(filter.as_ref()).expect("failed to parse the benchmark filter into regex expression!");
-                    let configs: std::vec::Vec<_> = configs.into_iter().filter(|c| regex_filter.is_match(&c.name)).collect();
-                    Some(configs)
-                }
-
-                pub fn load_config(path: impl AsRef<std::path::Path>) -> std::option::Option<std::vec::Vec<#name>> {
-                    #name::load_config_filter(path, ".*")
-                }
+            fn thread(&self) -> &[usize] {
+                &self.threads
             }
 
-            unsafe impl Sync for #name {}
-            unsafe impl Send for #name {}
-
-            impl shumai::BenchConfig for #name {
-                fn name(&self) -> &String {
-                    &self.name
-                }
-
-                fn thread(&self) -> &[usize] {
-                    &self.threads
-                }
-
-                fn bench_sec(&self) -> usize {
-                    self.time
-                }
+            fn bench_sec(&self) -> usize {
+                self.time
             }
-        };
+        }
+    };
 
     expanded.into()
 }
@@ -158,25 +158,6 @@ pub fn bench_config(args: TokenStream, input: TokenStream) -> TokenStream {
                 for b in self.#lower_name.as_ref()?.iter(){
                     configs.extend(b.unfold());
                 }
-
-                // let args: std::vec::Vec<String> = std::env::args().collect();
-
-
-                // let filter_str = match args.get(1) {
-                //     Some(v) => {
-                //         use shumai::__dep::colored::*;
-                //         eprintln!("{}: Applying benchmark filter: {} to the configs.", "Warning".yellow(), v);
-                //         v.clone()
-                //     },
-                //     None => {
-                //         // accept all
-                //         ".*".to_string()
-                //     }
-                // };
-                // let bench_filter =
-                //    shumai::__dep::regex::Regex::new(&filter_str).expect("failed to parse the benchmark filter into regex expression!");
-
-                // let configs: std::vec::Vec<_> = configs.into_iter().filter(|c| c.is_match(&bench_filter)).collect();
 
                 Some(configs)
             }

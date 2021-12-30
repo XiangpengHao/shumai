@@ -15,12 +15,12 @@ pub use runner::run;
 pub use shumai_config_impl::{bench_config, ShumaiConfig};
 
 pub mod __dep {
+    pub use colored;
     pub use once_cell;
     pub use regex;
     pub use serde;
     pub use serde_json;
     pub use toml;
-    pub use colored;
 }
 
 /// The context send to MultiBench::run()
