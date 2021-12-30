@@ -94,9 +94,9 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
                 BenchRootConfig::load().#lower_name()
             }
 
-            pub fn from_config(path: &std::path::Path) -> std::option::Option<std::vec::Vec<#name>> {
+            pub fn from_config(path: impl AsRef<std::path::Path>) -> std::option::Option<std::vec::Vec<#name>> {
                 use super::BenchRootConfig;
-                BenchRootConfig::load_config(path).#lower_name()
+                BenchRootConfig::load_config(path.as_ref()).#lower_name()
             }
         }
 
