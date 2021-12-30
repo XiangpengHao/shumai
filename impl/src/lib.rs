@@ -85,7 +85,7 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
         }
 
         impl #name {
-            pub fn load_config_filter(path: impl AsRef<std::path::Path>, filter: impl AsRef<str>) -> std::option::Option<std::vec::Vec<#name>> {
+            pub fn load_with_filter(path: impl AsRef<std::path::Path>, filter: impl AsRef<str>) -> std::option::Option<std::vec::Vec<#name>> {
                 use super::BenchRootConfig;
                 let configs = BenchRootConfig::load_config(path.as_ref()).#lower_name()?;
 
@@ -95,8 +95,8 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
                 Some(configs)
             }
 
-            pub fn load_config(path: impl AsRef<std::path::Path>) -> std::option::Option<std::vec::Vec<#name>> {
-                #name::load_config_filter(path, ".*")
+            pub fn load(path: impl AsRef<std::path::Path>) -> std::option::Option<std::vec::Vec<#name>> {
+                #name::load_with_filter(path, ".*")
             }
         }
 
