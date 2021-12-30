@@ -49,14 +49,14 @@ impl MultiThreadBench for TestBench {
 
 
 fn main() {
-    let config = Foo::from_config(Path::new("benchmark.toml"))
+    let config = Foo::load_config("benchmark.toml")
         .expect("Failed to parse config!");
     let repeat = 3;
 
     for c in config.iter() {
         let benchmark = TestBench::default();
         let result = shumai::run(&benchmark, c, repeat);
-	result.to_json() // save results to a json file
+        result.to_json() // save results to a json file
     }
 }
 

@@ -54,8 +54,8 @@ impl ShumaiBench for TestBench {
 
 #[test]
 fn config() {
-    let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
-        .expect("Failed to parse config!");
+    let config =
+        test_config::Foo::load_config("tests/benchmark.toml").expect("Failed to parse config!");
 
     assert_eq!(config.len(), 2);
     for (i, c) in config.iter().enumerate() {
@@ -63,13 +63,17 @@ fn config() {
         assert_eq!(c.time, 1);
         assert_eq!(c.a, i + 1);
     }
+
+    let config = test_config::Foo::load_config_filter("tests/benchmark.toml", "foo-2")
+        .expect("Failed to parse config");
+    assert_eq!(config.len(), 1);
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn runner() {
-    let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
-        .expect("Failed to parse config!");
+    let config =
+        test_config::Foo::load_config("tests/benchmark.toml").expect("Failed to parse config!");
     let repeat = 2;
 
     for c in config.iter() {
@@ -103,8 +107,8 @@ fn runner() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn write_json() {
-    let config = test_config::Foo::from_config("tests/benchmark.toml")
-        .expect("Failed to parse config!");
+    let config =
+        test_config::Foo::load_config("tests/benchmark.toml").expect("Failed to parse config!");
     let repeat = 1;
 
     for c in config.iter() {
@@ -124,8 +128,8 @@ fn write_json() {
 #[cfg(feature = "perf")]
 #[cfg_attr(miri, ignore)]
 fn simple_perf() {
-    let config = test_config::Foo::from_config(std::path::Path::new("tests/benchmark.toml"))
-        .expect("Failed to parse config!");
+    let config =
+        test_config::Foo::load_config("tests/benchmark.toml").expect("Failed to parse config!");
     let repeat = 1;
 
     let c = config.first().unwrap();

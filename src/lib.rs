@@ -20,6 +20,7 @@ pub mod __dep {
     pub use serde;
     pub use serde_json;
     pub use toml;
+    pub use colored;
 }
 
 /// The context send to MultiBench::run()
