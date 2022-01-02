@@ -201,7 +201,8 @@ pub fn run<B: ShumaiBench>(
         });
     }
 
-    f.cleanup();
+    let cleanup_result = f.cleanup();
+    results.cleanup_results = cleanup_result;
 
     results
 }

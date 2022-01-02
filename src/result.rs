@@ -14,6 +14,7 @@ use crate::{
 pub struct ShumaiResult<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> {
     pub config: T,
     pub load_results: Option<Value>,
+    pub cleanup_results: Option<Value>,
     pub env: RunnerEnv,
     pub bench_results: Vec<ThreadResult<R>>,
 }
@@ -23,6 +24,7 @@ impl<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> ShumaiResult<T, R
         Self {
             config,
             load_results,
+            cleanup_results: None,
             env,
             bench_results: Vec::new(),
         }

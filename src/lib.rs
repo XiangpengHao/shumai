@@ -88,5 +88,5 @@ pub trait ShumaiBench: Send + Sync {
     fn run(&self, context: BenchContext<Self::Config>) -> Self::Result;
 
     /// clean up resources, if necessary
-    fn cleanup(&self);
+    fn cleanup(&self) -> Option<serde_json::Value>;
 }

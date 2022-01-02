@@ -35,7 +35,7 @@ impl MultiThreadBench for TestBench {
     type Result = usize;
     type Config = Foo;
 
-    fn load(&self) {}
+    fn load(&self) -> Option<Value> {}
 
     fn run(&self, context: BenchContext<Foo>) -> Self::Result {
 	// Barrier to ensure all threads start at the same time
@@ -44,7 +44,7 @@ impl MultiThreadBench for TestBench {
 	// start benchmark
     }
 
-    fn cleanup(&self) {}
+    fn cleanup(&self) -> Option<Value> {}
 }
 
 
