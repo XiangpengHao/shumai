@@ -31,7 +31,7 @@ pub struct Foo {
 	pub a: usize,
 }
 
-impl MultiThreadBench for TestBench {
+impl ShumaiBench for TestBench {
     type Result = usize;
     type Config = Foo;
 

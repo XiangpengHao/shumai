@@ -3,7 +3,8 @@
 use crate::counters::perf::{PerfCounter, PerfStatsRaw};
 use crate::env::RunnerEnv;
 use crate::result::{ShumaiResult, ThreadResult};
-use crate::{counters::pcm::PcmStats, BenchConfig, BenchContext, ShumaiBench};
+use crate::BenchResult;
+use crate::{counters::pcm::PcmStats, BenchConfig, Context, ShumaiBench};
 use colored::Colorize;
 use std::process;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -35,7 +36,7 @@ fn bench_one_sample<B: ShumaiBench>(
     crossbeam_utils::thread::scope(|scope| {
         let handlers: Vec<_> = (0..thread_cnt)
             .map(|tid| {
-                let context = BenchContext {
+                let context = Context {
                     thread_id: tid,
                     thread_cnt,
                     config,
@@ -82,8 +83,6 @@ fn bench_one_sample<B: ShumaiBench>(
 
         let start_time = Instant::now();
 
-        // TODO: we can have an async runtime here to run multiple things
-        // e.g. collecting metrics
         let mut time_cnt = 0;
         while (Instant::now() - start_time) < running_time {
             std::thread::sleep(Duration::from_millis(50));

@@ -24,7 +24,7 @@ pub mod __dep {
 }
 
 /// The context send to MultiBench::run()
-pub struct BenchContext<'a, C: BenchConfig> {
+pub struct Context<'a, C: BenchConfig> {
     pub thread_id: usize,
     pub thread_cnt: usize,
     pub config: &'a C,
@@ -32,7 +32,7 @@ pub struct BenchContext<'a, C: BenchConfig> {
     running: &'a AtomicBool,
 }
 
-impl<C: BenchConfig> BenchContext<'_, C> {
+impl<C: BenchConfig> Context<'_, C> {
     /// A barrier to ensure all threads start at exactly the same time,
     /// every run() should call context.wait_for_start() right after initialization or it will block forever.
     pub fn wait_for_start(&self) {
@@ -56,15 +56,20 @@ impl<C: BenchConfig> BenchContext<'_, C> {
     }
 }
 
-unsafe impl<C: BenchConfig> Send for BenchContext<'_, C> {}
-unsafe impl<C: BenchConfig> Sync for BenchContext<'_, C> {}
+unsafe impl<C: BenchConfig> Send for Context<'_, C> {}
+unsafe impl<C: BenchConfig> Sync for Context<'_, C> {}
 
 pub trait BenchResult:
     serde::Serialize + Default + AddAssign + Add<Output = Self> + Clone + Send + Sync + Display
 {
+    fn short_value(&self) -> usize;
 }
 
-impl BenchResult for usize {}
+impl BenchResult for usize {
+    fn short_value(&self) -> usize {
+        *self
+    }
+}
 
 pub trait BenchConfig: Clone + Serialize {
     fn name(&self) -> &String;
@@ -85,7 +90,7 @@ pub trait ShumaiBench: Send + Sync {
     /// Run concurrent benchmark
     /// Inside this function should call context.wait_for_start() to notify the main thread;
     /// it also blocks current thread until every thread is ready (i.e. issued context.wait_for_start())
-    fn run(&self, context: BenchContext<Self::Config>) -> Self::Result;
+    fn run(&self, context: Context<Self::Config>) -> Self::Result;
 
     /// clean up resources, if necessary
     fn cleanup(&self) -> Option<serde_json::Value>;

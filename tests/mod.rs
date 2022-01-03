@@ -1,5 +1,5 @@
 use serde_json::{json, Value};
-use shumai::{bench_config, BenchContext, ShumaiBench, ShumaiResult};
+use shumai::{bench_config, Context, ShumaiBench, ShumaiResult};
 
 #[bench_config]
 pub mod test_config {
@@ -37,7 +37,7 @@ impl ShumaiBench for TestBench {
         Some(json!({"load_finished": true}))
     }
 
-    fn run(&self, context: BenchContext<Foo>) -> Self::Result {
+    fn run(&self, context: Context<Foo>) -> Self::Result {
         context.wait_for_start();
         let mut sum = 0;
         while context.is_running() {
