@@ -2,6 +2,7 @@ use std::{
     fmt::Display,
     ops::{Add, AddAssign},
     sync::atomic::{AtomicBool, AtomicU64, Ordering},
+    time::Duration,
 };
 
 use serde::Serialize;
@@ -63,11 +64,16 @@ pub trait BenchResult:
     serde::Serialize + Default + AddAssign + Add<Output = Self> + Clone + Send + Sync + Display
 {
     fn short_value(&self) -> usize;
+    fn normalize_time(self, dur: &Duration) -> Self;
 }
 
 impl BenchResult for usize {
     fn short_value(&self) -> usize {
         *self
+    }
+
+    fn normalize_time(self, dur: &Duration) -> usize {
+        ((self as f64) / dur.as_secs_f64()) as usize
     }
 }
 

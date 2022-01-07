@@ -6,7 +6,6 @@ use crate::result::{ShumaiResult, ThreadResult};
 use crate::BenchResult;
 use crate::{counters::pcm::PcmStats, BenchConfig, Context, ShumaiBench};
 use colored::Colorize;
-use std::process;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
@@ -18,7 +17,7 @@ impl Drop for ThreadPoison {
                 "Benchmark thread {:?} panicked, terminating all other threads...",
                 std::thread::current().id()
             );
-            process::exit(1);
+            std::process::exit(1);
         }
     }
 }
@@ -111,9 +110,9 @@ fn bench_one_sample<B: ShumaiBench>(
         }
 
         // aggregate throughput numbers
-        let thrput = all_results
-            .iter()
-            .fold(B::Result::default(), |v, h| v + h.0.clone());
+        let thrput = all_results.iter().fold(B::Result::default(), |v, h| {
+            v + h.0.clone().normalize_time(&running_time)
+        });
 
         // aggregate perf numbers
         let perf_counter = if all_results.first().unwrap().1.is_none() {
