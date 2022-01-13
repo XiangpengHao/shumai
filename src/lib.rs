@@ -64,6 +64,8 @@ pub trait BenchResult:
     serde::Serialize + Default + AddAssign + Add<Output = Self> + Clone + Send + Sync + Display
 {
     fn short_value(&self) -> usize;
+
+    #[must_use]
     fn normalize_time(self, dur: &Duration) -> Self;
 }
 
