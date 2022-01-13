@@ -5,6 +5,7 @@ use crate::env::RunnerEnv;
 use crate::result::{ShumaiResult, ThreadResult};
 use crate::BenchResult;
 use crate::{counters::pcm::PcmStats, BenchConfig, Context, ShumaiBench};
+use chrono::{Datelike, Local, Timelike};
 use colored::Colorize;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
@@ -104,7 +105,17 @@ fn bench_one_sample<B: ShumaiBench>(
         // save the flamegraph
         if let Some(guard) = guard {
             if let Ok(report) = guard.report().build() {
-                let file = std::fs::File::create(format!("{}.svg", config.name())).unwrap();
+                let local_time = Local::now();
+                let file = std::fs::File::create(format!(
+                    "target/benchmark/{}-{:02}-{:02}/{:02}-{:02}-{}.svg",
+                    local_time.year(),
+                    local_time.month(),
+                    local_time.day(),
+                    local_time.hour(),
+                    local_time.minute(),
+                    config.name()
+                ))
+                .unwrap();
                 report.flamegraph(file).unwrap();
             }
         }
