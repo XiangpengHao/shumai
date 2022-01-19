@@ -20,6 +20,8 @@ pub mod test_config {
 enum ExecutionSeq {
     Load,
     Run,
+    IterationFinished,
+    ThreadFinished,
     Cleanup,
 }
 
@@ -32,7 +34,7 @@ impl ShumaiBench for TestBench {
     type Result = usize;
     type Config = Foo;
 
-    fn load(&self) -> Option<Value> {
+    fn load(&mut self) -> Option<Value> {
         self.execution_queue.push(ExecutionSeq::Load);
         Some(json!({"load_finished": true}))
     }
@@ -47,7 +49,15 @@ impl ShumaiBench for TestBench {
         sum
     }
 
-    fn cleanup(&self) -> Option<Value> {
+    fn on_iteration_finished(&mut self) {
+        self.execution_queue.push(ExecutionSeq::IterationFinished);
+    }
+
+    fn on_thread_finished(&mut self) {
+        self.execution_queue.push(ExecutionSeq::ThreadFinished);
+    }
+
+    fn cleanup(&mut self) -> Option<Value> {
         self.execution_queue.push(ExecutionSeq::Cleanup);
         Some(json!({"cleanup_finished": true}))
     }
@@ -76,17 +86,19 @@ fn runner() {
     let repeat = 2;
 
     for c in config.iter() {
-        let benchmark = TestBench::default();
-        let _result = shumai::run(&benchmark, c, repeat);
+        let mut benchmark = TestBench::default();
+        let _result = shumai::run(&mut benchmark, c, repeat);
 
         let mut gt = Vec::new();
         gt.push(ExecutionSeq::Load);
         for thread in c.threads.iter() {
-            for _i in 0..*thread {
-                for _j in 0..repeat {
+            for _j in 0..repeat {
+                for _i in 0..*thread {
                     gt.push(ExecutionSeq::Run);
                 }
+                gt.push(ExecutionSeq::IterationFinished);
             }
+            gt.push(ExecutionSeq::ThreadFinished);
         }
         gt.push(ExecutionSeq::Cleanup);
 
@@ -109,8 +121,8 @@ fn check_load_cleanup_result() {
     let repeat = 1;
 
     for c in config.iter() {
-        let benchmark = TestBench::default();
-        let result = shumai::run(&benchmark, c, repeat);
+        let mut benchmark = TestBench::default();
+        let result = shumai::run(&mut benchmark, c, repeat);
 
         assert_eq!(
             "true",
@@ -130,8 +142,8 @@ fn write_json() {
     let repeat = 1;
 
     for c in config.iter() {
-        let benchmark = TestBench::default();
-        let result = shumai::run(&benchmark, c, repeat);
+        let mut benchmark = TestBench::default();
+        let result = shumai::run(&mut benchmark, c, repeat);
         let file_path = result.write_json().unwrap();
 
         let written_data = std::fs::read_to_string(file_path).unwrap();

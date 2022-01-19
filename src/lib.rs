@@ -93,13 +93,17 @@ pub trait ShumaiBench: Send + Sync {
 
     /// The benchmark should init their code, load the necessary data and warmup the resources
     /// Note that the `load` will only be called once, no matter what `sample_size` is.
-    fn load(&self) -> Option<serde_json::Value>;
+    fn load(&mut self) -> Option<serde_json::Value>;
 
     /// Run concurrent benchmark
     /// Inside this function should call context.wait_for_start() to notify the main thread;
     /// it also blocks current thread until every thread is ready (i.e. issued context.wait_for_start())
     fn run(&self, context: Context<Self::Config>) -> Self::Result;
 
+    fn on_iteration_finished(&mut self) {}
+
+    fn on_thread_finished(&mut self){}
+
     /// clean up resources, if necessary
-    fn cleanup(&self) -> Option<serde_json::Value>;
+    fn cleanup(&mut self) -> Option<serde_json::Value>;
 }

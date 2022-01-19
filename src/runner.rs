@@ -147,7 +147,7 @@ fn bench_thread<B: ShumaiBench>(
     thread_cnt: usize,
     config: &B::Config,
     sample_size: usize,
-    f: &B,
+    f: &mut B,
 ) -> (
     Vec<<B as ShumaiBench>::Result>,
     Vec<Option<PerfCounter>>,
@@ -166,6 +166,8 @@ fn bench_thread<B: ShumaiBench>(
         let (thrput, perf_counter, pcm_stats) =
             bench_one_sample(thread_cnt, config, running_time, f);
 
+        f.on_iteration_finished();
+
         println!("Iteration {} finished------------------\n{}\n", i, thrput);
 
         bench_results.push(thrput);
@@ -178,7 +180,7 @@ fn bench_thread<B: ShumaiBench>(
 
 #[must_use = "bench function returns the bench results"]
 pub fn run<B: ShumaiBench>(
-    f: &B,
+    f: &mut B,
     config: &B::Config,
     repeat: usize,
 ) -> ShumaiResult<B::Config, B::Result> {
@@ -208,6 +210,8 @@ pub fn run<B: ShumaiBench>(
             pcm: pcm_stats.into_iter().last().unwrap(), // only from the last sample, or it will be too verbose
             perf: perf_counter.into_iter().last().unwrap(), // same as above
         });
+
+        f.on_thread_finished();
     }
 
     let cleanup_result = f.cleanup();
