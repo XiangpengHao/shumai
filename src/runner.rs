@@ -166,7 +166,7 @@ fn bench_thread<B: ShumaiBench>(
         let (thrput, perf_counter, pcm_stats) =
             bench_one_sample(thread_cnt, config, running_time, f);
 
-        f.on_iteration_finished();
+        f.on_iteration_finished(sample);
 
         println!("Iteration {} finished------------------\n{}\n", i, thrput);
 
@@ -211,7 +211,7 @@ pub fn run<B: ShumaiBench>(
             perf: perf_counter.into_iter().last().unwrap(), // same as above
         });
 
-        f.on_thread_finished();
+        f.on_thread_finished(*thread_cnt);
     }
 
     let cleanup_result = f.cleanup();

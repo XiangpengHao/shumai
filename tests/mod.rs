@@ -49,11 +49,11 @@ impl ShumaiBench for TestBench {
         sum
     }
 
-    fn on_iteration_finished(&mut self) {
+    fn on_iteration_finished(&mut self, _cur_iter: usize) {
         self.execution_queue.push(ExecutionSeq::IterationFinished);
     }
 
-    fn on_thread_finished(&mut self) {
+    fn on_thread_finished(&mut self, _cur_thread: usize) {
         self.execution_queue.push(ExecutionSeq::ThreadFinished);
     }
 
