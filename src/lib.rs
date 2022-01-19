@@ -102,7 +102,7 @@ pub trait ShumaiBench: Send + Sync {
 
     fn on_iteration_finished(&mut self) {}
 
-    fn on_thread_finished(&mut self){}
+    fn on_thread_finished(&mut self) {}
 
     /// clean up resources, if necessary
     fn cleanup(&mut self) -> Option<serde_json::Value>;
