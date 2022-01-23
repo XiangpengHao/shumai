@@ -13,9 +13,12 @@ use crate::{
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ShumaiResult<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> {
     pub config: T,
+    #[serde(rename = "load")]
     pub load_results: Option<Value>,
+    #[serde(rename = "cleanup")]
     pub cleanup_results: Option<Value>,
     pub env: RunnerEnv,
+    #[serde(rename = "run")]
     pub bench_results: Vec<ThreadResult<R>>,
 }
 
@@ -68,7 +71,7 @@ impl<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> ShumaiResult<T, R
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ThreadResult<R: Serialize + Clone> {
     pub thread_cnt: usize,
-    pub bench_results: Vec<R>,
+    pub results: Vec<R>,
     pub pcm: Vec<PcmStats>,
     pub perf: Option<PerfCounter>,
 }

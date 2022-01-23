@@ -206,7 +206,7 @@ pub fn run<B: ShumaiBench>(
 
         results.add_result(ThreadResult {
             thread_cnt: *thread_cnt,
-            bench_results,
+            results: bench_results,
             pcm: pcm_stats.into_iter().last().unwrap(), // only from the last sample, or it will be too verbose
             perf: perf_counter.into_iter().last().unwrap(), // same as above
         });
