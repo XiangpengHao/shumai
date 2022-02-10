@@ -32,14 +32,14 @@ struct TestBench {
 
 impl ShumaiBench for TestBench {
     type Result = usize;
-    type Config = Foo;
+    type Config = test_config::Foo;
 
     fn load(&mut self) -> Option<Value> {
         self.execution_queue.push(ExecutionSeq::Load);
         Some(json!({"load_finished": true}))
     }
 
-    fn run(&self, context: Context<Foo>) -> Self::Result {
+    fn run(&self, context: Context<test_config::Foo>) -> Self::Result {
         context.wait_for_start();
         let mut sum = 0;
         while context.is_running() {
@@ -147,7 +147,8 @@ fn write_json() {
         let file_path = result.write_json().unwrap();
 
         let written_data = std::fs::read_to_string(file_path).unwrap();
-        let result: ShumaiResult<Foo, usize> = serde_json::from_str(&written_data).unwrap();
+        let result: ShumaiResult<test_config::Foo, usize> =
+            serde_json::from_str(&written_data).unwrap();
         assert_eq!(result.config.time, 1);
         assert_eq!(result.config.threads, vec![1, 2, 3]);
         assert_eq!(result.bench_results.len(), 3);

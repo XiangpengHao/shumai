@@ -16,3 +16,8 @@ proc-macro = true
 proc-macro2 = "1.0"
 quote = "1.0"
 syn = { version = "1.0", features = ["full"]}
+
+
+[[bin]]
+name = "test"
+path = "bin/test0.rs"

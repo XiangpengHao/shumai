@@ -86,7 +86,6 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
 
         impl #name {
             pub fn load_with_filter(path: impl AsRef<std::path::Path>, filter: impl AsRef<str>) -> std::option::Option<std::vec::Vec<#name>> {
-                use super::BenchRootConfig;
                 let configs = BenchRootConfig::load_config(path.as_ref()).#lower_name()?;
 
                 let regex_filter =
@@ -134,26 +133,28 @@ pub fn bench_config(args: TokenStream, input: TokenStream) -> TokenStream {
     } else {
         panic!("config attribute must be applied to mod");
     };
+
     let mod_items = item_mod.content.expect("mod can't be empty").1;
-    for item in mod_items {
+    for item in mod_items.iter() {
         if let syn::Item::Struct(conf_s) = item {
-            all_configs.push(conf_s.ident);
+            all_configs.push(conf_s);
         }
     }
     let mod_name = item_mod.ident;
 
     let root_fields = all_configs.iter().map(|f| {
-        let matrix_name = gen_matrix_name(f);
-        let lower_name = gen_lower_ident(f);
+        let matrix_name = gen_matrix_name(&f.ident);
+        let lower_name = gen_lower_ident(&f.ident);
         quote! {
             #lower_name: std::option::Option<std::vec::Vec<#matrix_name>>
         }
     });
 
     let field_functions = all_configs.iter().map(|f| {
-        let lower_name = gen_lower_ident(f);
+        let ident = &f.ident;
+        let lower_name = gen_lower_ident(ident);
         quote! {
-            pub fn #lower_name(&self) -> std::option::Option<std::vec::Vec<#f>>{
+            pub fn #lower_name(&self) -> std::option::Option<std::vec::Vec<#ident>>{
                 let mut configs = std::vec::Vec::new();
                 for b in self.#lower_name.as_ref()?.iter(){
                     configs.extend(b.unfold());
@@ -164,37 +165,36 @@ pub fn bench_config(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     });
 
-    let field_import = all_configs.iter().map(|f| {
-        let matrix_name = gen_matrix_name(f);
-        quote! {
-            use self::#mod_name::{#matrix_name, #f};
-        }
-    });
-
     let root_config = quote! {
 
-        #(#field_import)*
+        mod #mod_name {
 
-        #[derive(shumai::__dep::serde::Deserialize, Debug)]
-        struct BenchRootConfig {
-            #(#root_fields,)*
-        }
+            #(#mod_items)*
 
-        impl BenchRootConfig {
-            fn load_config(path: &std::path::Path)-> Self {
-                let contents = std::fs::read_to_string(path).unwrap();
-                let configs: BenchRootConfig =
-                    shumai::__dep::toml::from_str(&contents).expect("Unable to parse the toml file");
-                configs
+            #[derive(shumai::__dep::serde::Deserialize, Debug)]
+            struct BenchRootConfig {
+                #(#root_fields,)*
             }
+            impl BenchRootConfig {
+                fn load_config(path: &std::path::Path)-> Self {
+                    let contents = std::fs::read_to_string(path).unwrap();
+                    let configs: BenchRootConfig =
+                        shumai::__dep::toml::from_str(&contents).expect("Unable to parse the toml file");
+                    configs
+                }
 
-            #(#field_functions)*
+                #(#field_functions)*
+            }
         }
     };
 
-    out.extend(TokenStream::from(root_config));
+    eprintln!("TOKENS: {}", root_config);
 
-    out
+    root_config.into()
+
+    // out.extend(TokenStream::from(root_config));
+
+    // out
 }
 
 fn gen_matrix_name(name: &syn::Ident) -> syn::Ident {
