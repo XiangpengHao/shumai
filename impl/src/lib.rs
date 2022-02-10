@@ -197,7 +197,7 @@ pub fn shumai_config(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     };
 
-    eprintln!("{}", root_config);
+    // eprintln!("{}", root_config);
 
     root_config.into()
 }
