@@ -130,10 +130,13 @@ pub fn shumai_config(args: TokenStream, input: TokenStream) -> TokenStream {
         panic!("config attribute must be applied to mod");
     };
 
+    let mut mod_imports = Vec::new();
     let mod_items = item_mod.content.expect("mod can't be empty").1;
     for item in mod_items.iter() {
-        if let syn::Item::Struct(conf_s) = item {
-            all_configs.push(conf_s);
+        match item {
+            syn::Item::Struct(conf_s) => all_configs.push(conf_s),
+            syn::Item::Use(u) => mod_imports.push(u),
+            _ => {}
         }
     }
 
@@ -169,9 +172,10 @@ pub fn shumai_config(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     });
 
+    let mod_vis = item_mod.vis;
     let root_config = quote! {
-
-        mod #mod_name {
+        #mod_vis mod #mod_name {
+            #(#mod_imports)*
 
             #(#all_config_derived)*
 
@@ -192,6 +196,8 @@ pub fn shumai_config(args: TokenStream, input: TokenStream) -> TokenStream {
             }
         }
     };
+
+    eprintln!("{}", root_config);
 
     root_config.into()
 }

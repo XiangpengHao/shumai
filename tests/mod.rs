@@ -1,8 +1,16 @@
 use serde_json::{json, Value};
 use shumai::{shumai_config, Context, ShumaiBench, ShumaiResult};
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum Workload {
+    A,
+    B,
+}
+
 #[shumai_config]
 pub mod test_config {
+    use super::*;
+
     pub struct Foo {
         pub name: String,
         pub threads: Vec<usize>,
@@ -15,6 +23,7 @@ pub mod test_config {
         pub name: String,
         pub threads: Vec<usize>,
         pub time: usize,
+        pub workload: Workload,
     }
 }
 
