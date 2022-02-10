@@ -121,9 +121,8 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn bench_config(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn shumai_config(args: TokenStream, input: TokenStream) -> TokenStream {
     assert!(args.is_empty());
-    let mut out = input.clone();
     let ty: syn::Item = syn::parse_macro_input!(input as syn::Item);
 
     let mut all_configs = Vec::new();
@@ -140,6 +139,7 @@ pub fn bench_config(args: TokenStream, input: TokenStream) -> TokenStream {
             all_configs.push(conf_s);
         }
     }
+
     let mod_name = item_mod.ident;
 
     let root_fields = all_configs.iter().map(|f| {
@@ -165,16 +165,24 @@ pub fn bench_config(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     });
 
+    let all_config_derived = all_configs.iter().map(|s| {
+        quote! {
+            #[derive(shumai_config_impl::ShumaiConfig, shumai::__dep::serde::Serialize, shumai::__dep::serde::Deserialize, Clone, Debug)]
+            #s
+        }
+    });
+
     let root_config = quote! {
 
         mod #mod_name {
 
-            #(#mod_items)*
+            #(#all_config_derived)*
 
             #[derive(shumai::__dep::serde::Deserialize, Debug)]
             struct BenchRootConfig {
                 #(#root_fields,)*
             }
+
             impl BenchRootConfig {
                 fn load_config(path: &std::path::Path)-> Self {
                     let contents = std::fs::read_to_string(path).unwrap();
@@ -188,13 +196,7 @@ pub fn bench_config(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     };
 
-    eprintln!("TOKENS: {}", root_config);
-
     root_config.into()
-
-    // out.extend(TokenStream::from(root_config));
-
-    // out
 }
 
 fn gen_matrix_name(name: &syn::Ident) -> syn::Ident {

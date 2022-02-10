@@ -23,14 +23,23 @@ a = [1, 2]
 ```rust
 // bench_config.rs
 
-#[derive(ShumaiConfig, Serialize, Clone, Debug)]
-pub struct Foo {
-	pub name: String,
-	pub threads: Vec<usize>,
-	pub time: usize,
-	#[matrix]
-	pub a: usize,
+#[toml_config]
+mod config_file {
+  pub struct Foo {
+    pub name: String,
+    pub threads: Vec<usize>,
+    pub time: usize,
+    #[matrix]
+    pub a: usize,
+  }
+
+  pub struct Bar {
+    pub name: String,
+    pub threads: Vec<usize>,
+    pub time: usize,
+  }
 }
+
 
 impl ShumaiBench for TestBench {
     type Result = usize;

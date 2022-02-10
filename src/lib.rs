@@ -13,7 +13,7 @@ mod result;
 mod runner;
 pub use result::ShumaiResult;
 pub use runner::run;
-pub use shumai_config_impl::{bench_config, ShumaiConfig};
+pub use shumai_config_impl::shumai_config;
 
 pub mod __dep {
     pub use colored;

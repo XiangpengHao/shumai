@@ -1,18 +1,20 @@
 use serde_json::{json, Value};
-use shumai::{bench_config, Context, ShumaiBench, ShumaiResult};
+use shumai::{shumai_config, Context, ShumaiBench, ShumaiResult};
 
-#[bench_config]
+#[shumai_config]
 pub mod test_config {
-    use serde::{Deserialize, Serialize};
-    use shumai::ShumaiConfig;
-
-    #[derive(ShumaiConfig, Serialize, Deserialize, Clone, Debug)]
     pub struct Foo {
         pub name: String,
         pub threads: Vec<usize>,
         pub time: usize,
         #[matrix]
         pub a: usize,
+    }
+
+    pub struct Bar {
+        pub name: String,
+        pub threads: Vec<usize>,
+        pub time: usize,
     }
 }
 
@@ -77,6 +79,12 @@ fn config() {
     let config = test_config::Foo::load_with_filter("tests/benchmark.toml", "foo-2")
         .expect("Failed to parse config");
     assert_eq!(config.len(), 1);
+}
+
+#[test]
+#[should_panic(expected = "Failed to parse config!")]
+fn empty_config() {
+    test_config::Bar::load("tests/benchmark.toml").expect("Failed to parse config!");
 }
 
 #[test]
