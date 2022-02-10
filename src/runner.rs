@@ -1,15 +1,22 @@
 #![allow(clippy::needless_collect, clippy::type_complexity)]
 
-use crate::counters::perf::{PerfCounter, PerfStatsRaw};
-use crate::env::RunnerEnv;
-use crate::result::{ShumaiResult, ThreadResult};
-use crate::BenchResult;
-use crate::{counters::pcm::PcmStats, BenchConfig, Context, ShumaiBench};
+use crate::{
+    env::RunnerEnv,
+    metrics::{
+        disk_io::{disk_io_of_func, DiskUsage},
+        pcm::PcmStats,
+        perf::{PerfCounter, PerfStatsRaw},
+    },
+    result::{ShumaiResult, ThreadResult},
+    BenchConfig, BenchResult, Context, ShumaiBench,
+};
 use chrono::{Datelike, Local, Timelike};
 use colored::Colorize;
-use std::str::FromStr;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::time::{Duration, Instant};
+use std::{
+    str::FromStr,
+    sync::atomic::{AtomicBool, AtomicU64, Ordering},
+    time::{Duration, Instant},
+};
 
 struct ThreadPoison;
 impl Drop for ThreadPoison {
@@ -29,7 +36,7 @@ fn bench_one_sample<B: ShumaiBench>(
     config: &B::Config,
     running_time: Duration,
     f: &B,
-) -> (B::Result, Option<PerfCounter>, Vec<PcmStats>) {
+) -> (B::Result, Option<PerfCounter>, Vec<PcmStats>, DiskUsage) {
     let ready_thread = AtomicU64::new(0);
     let is_running = AtomicBool::new(false);
     let mut pcm_stats = Vec::new();
@@ -79,29 +86,34 @@ fn bench_one_sample<B: ShumaiBench>(
             None
         };
 
-        // now all threads start running!
-        is_running.store(true, Ordering::SeqCst);
+        let (disk_usage, all_results) = disk_io_of_func(|| {
+            // now all threads start running!
+            is_running.store(true, Ordering::SeqCst);
 
-        let start_time = Instant::now();
+            let start_time = Instant::now();
 
-        let mut time_cnt = 0;
-        while (Instant::now() - start_time) < running_time {
-            std::thread::sleep(Duration::from_millis(50));
-            time_cnt += 1;
+            let mut time_cnt = 0;
+            while (Instant::now() - start_time) < running_time {
+                std::thread::sleep(Duration::from_millis(50));
+                time_cnt += 1;
 
-            if cfg!(feature = "pcm") {
-                // roughly every second
-                if time_cnt % 20 == 0 {
-                    let stats = PcmStats::from_request();
-                    pcm_stats.push(stats);
+                if cfg!(feature = "pcm") {
+                    // roughly every second
+                    if time_cnt % 20 == 0 {
+                        let stats = PcmStats::from_request();
+                        pcm_stats.push(stats);
+                    }
                 }
             }
-        }
 
-        // stop the world!
-        is_running.store(false, Ordering::SeqCst);
+            // stop the world!
+            is_running.store(false, Ordering::SeqCst);
 
-        let all_results: Vec<_> = handlers.into_iter().map(|f| f.join().unwrap()).collect();
+            handlers
+                .into_iter()
+                .map(|f| f.join().unwrap())
+                .collect::<Vec<_>>()
+        });
 
         // save the flamegraph
         if let Some(guard) = guard {
@@ -143,7 +155,7 @@ fn bench_one_sample<B: ShumaiBench>(
             )
         };
 
-        (thrput, perf_counter, pcm_stats)
+        (thrput, perf_counter, pcm_stats, disk_usage)
     })
     .unwrap()
 }
@@ -157,6 +169,7 @@ fn bench_thread<B: ShumaiBench>(
     Vec<<B as ShumaiBench>::Result>,
     Vec<Option<PerfCounter>>,
     Vec<Vec<PcmStats>>,
+    Vec<DiskUsage>,
 ) {
     let (sample, running_time) = match is_profile_by_time() {
         Some(t) => (1, Duration::from_secs(t as u64)),
@@ -166,9 +179,10 @@ fn bench_thread<B: ShumaiBench>(
     let mut bench_results = Vec::new();
     let mut perf_counters = Vec::new();
     let mut pcm = Vec::new();
+    let mut disk = Vec::new();
 
     for i in 0..sample {
-        let (thrput, perf_counter, pcm_stats) =
+        let (thrput, perf_counter, pcm_stats, disk_usage) =
             bench_one_sample(thread_cnt, config, running_time, f);
 
         f.on_iteration_finished(sample);
@@ -178,9 +192,10 @@ fn bench_thread<B: ShumaiBench>(
         bench_results.push(thrput);
         perf_counters.push(perf_counter);
         pcm.push(pcm_stats);
+        disk.push(disk_usage);
     }
 
-    (bench_results, perf_counters, pcm)
+    (bench_results, perf_counters, pcm, disk)
 }
 
 #[must_use = "bench function returns the bench results"]
@@ -206,7 +221,7 @@ pub fn run<B: ShumaiBench>(
             *thread_cnt as usize,
         );
 
-        let (bench_results, perf_counter, pcm_stats) =
+        let (bench_results, perf_counter, pcm_stats, disk_usage) =
             bench_thread(*thread_cnt as usize, config, repeat, f);
 
         results.add_result(ThreadResult {
@@ -214,6 +229,7 @@ pub fn run<B: ShumaiBench>(
             results: bench_results,
             pcm: pcm_stats.into_iter().last().unwrap(), // only from the last sample, or it will be too verbose
             perf: perf_counter.into_iter().last().unwrap(), // same as above
+            disk_usage: disk_usage.into_iter().last().unwrap(), // same as above
         });
 
         f.on_thread_finished(*thread_cnt);

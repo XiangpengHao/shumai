@@ -99,9 +99,6 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
             }
         }
 
-        unsafe impl Sync for #name {}
-        unsafe impl Send for #name {}
-
         impl shumai::BenchConfig for #name {
             fn name(&self) -> &String {
                 &self.name

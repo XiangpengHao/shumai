@@ -7,8 +7,8 @@ use std::{
 
 use serde::Serialize;
 
-mod counters;
 mod env;
+mod metrics;
 mod result;
 mod runner;
 pub use result::ShumaiResult;
@@ -57,9 +57,6 @@ impl<C: BenchConfig> Context<'_, C> {
     }
 }
 
-unsafe impl<C: BenchConfig> Send for Context<'_, C> {}
-unsafe impl<C: BenchConfig> Sync for Context<'_, C> {}
-
 pub trait BenchResult:
     serde::Serialize + Default + AddAssign + Add<Output = Self> + Clone + Send + Sync + Display
 {
@@ -79,7 +76,7 @@ impl BenchResult for usize {
     }
 }
 
-pub trait BenchConfig: Clone + Serialize {
+pub trait BenchConfig: Clone + Serialize + Send + Sync {
     fn name(&self) -> &String;
     fn thread(&self) -> &[usize];
     fn bench_sec(&self) -> usize;

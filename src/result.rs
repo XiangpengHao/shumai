@@ -5,7 +5,7 @@ use serde_json::Value;
 use std::{path::PathBuf, str::FromStr};
 
 use crate::{
-    counters::{pcm::PcmStats, perf::PerfCounter},
+    metrics::{pcm::PcmStats, perf::PerfCounter, disk_io::DiskUsage},
     env::RunnerEnv,
     BenchConfig,
 };
@@ -74,4 +74,5 @@ pub struct ThreadResult<R: Serialize + Clone> {
     pub results: Vec<R>,
     pub pcm: Vec<PcmStats>,
     pub perf: Option<PerfCounter>,
+    pub disk_usage: DiskUsage,
 }

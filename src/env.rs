@@ -2,11 +2,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RunnerEnv {
-    os_release: String,
+    kernel_version: String,
     rustc_version: String,
     hostname: String,
+    os_version: String,
     cpu_num: usize,
-    cpu_speed: u64,
+    physical_core_num: usize,
+    total_memory: usize,
 }
 
 impl Default for RunnerEnv {
@@ -29,20 +31,28 @@ impl RunnerEnv {
 
     #[cfg(not(miri))]
     pub fn new() -> Self {
-        let cpu_num = sys_info::cpu_num().unwrap() as usize;
-        let cpu_speed = sys_info::cpu_speed().unwrap();
-        let hostname = sys_info::hostname().unwrap();
-        let os_release = sys_info::os_release().unwrap();
+        use sysinfo::SystemExt;
+
+        let sys = sysinfo::System::new_all();
+
+        let cpu_num = sys.processors().len();
+        let total_memory = sys.total_memory() as usize;
+        let hostname = sys.host_name().unwrap();
+        let kernel_version = sys.kernel_version().unwrap();
+        let os_version = sys.os_version().unwrap();
         let rustc_ver = rustc_version::version().unwrap();
         let rustc_ver = format!(
             "{}.{}.{}",
             rustc_ver.major, rustc_ver.minor, rustc_ver.patch
         );
+
         Self {
             cpu_num,
-            cpu_speed,
+            total_memory,
+            physical_core_num: sys.physical_core_count().unwrap(),
             hostname,
-            os_release,
+            kernel_version,
+            os_version,
             rustc_version: rustc_ver,
         }
     }
