@@ -4,16 +4,15 @@ use crate::{
     env::RunnerEnv,
     metrics::{
         disk_io::{disk_io_of_func, DiskUsage},
+        flamegraph::flamegraph_of_func,
         pcm::PcmStats,
         perf::{PerfCounter, PerfStatsRaw},
     },
     result::{ShumaiResult, ThreadResult},
     BenchConfig, BenchResult, Context, ShumaiBench,
 };
-use chrono::{Datelike, Local, Timelike};
 use colored::Colorize;
 use std::{
-    str::FromStr,
     sync::atomic::{AtomicBool, AtomicU64, Ordering},
     time::{Duration, Instant},
 };
@@ -79,63 +78,36 @@ fn bench_one_sample<B: ShumaiBench>(
             backoff.snooze();
         }
 
-        // if flamegraph feature is enabled
-        let guard = if cfg!(feature = "flamegraph") {
-            Some(pprof::ProfilerGuard::new(200).unwrap())
-        } else {
-            None
-        };
+        let (disk_usage, all_results) = flamegraph_of_func(config.name(), || {
+            disk_io_of_func(|| {
+                // now all threads start running!
+                is_running.store(true, Ordering::SeqCst);
 
-        let (disk_usage, all_results) = disk_io_of_func(|| {
-            // now all threads start running!
-            is_running.store(true, Ordering::SeqCst);
+                let start_time = Instant::now();
 
-            let start_time = Instant::now();
+                let mut time_cnt = 0;
+                while (Instant::now() - start_time) < running_time {
+                    std::thread::sleep(Duration::from_millis(50));
+                    time_cnt += 1;
 
-            let mut time_cnt = 0;
-            while (Instant::now() - start_time) < running_time {
-                std::thread::sleep(Duration::from_millis(50));
-                time_cnt += 1;
-
-                if cfg!(feature = "pcm") {
-                    // roughly every second
-                    if time_cnt % 20 == 0 {
-                        let stats = PcmStats::from_request();
-                        pcm_stats.push(stats);
+                    if cfg!(feature = "pcm") {
+                        // roughly every second
+                        if time_cnt % 20 == 0 {
+                            let stats = PcmStats::from_request();
+                            pcm_stats.push(stats);
+                        }
                     }
                 }
-            }
 
-            // stop the world!
-            is_running.store(false, Ordering::SeqCst);
+                // stop the world!
+                is_running.store(false, Ordering::SeqCst);
 
-            handlers
-                .into_iter()
-                .map(|f| f.join().unwrap())
-                .collect::<Vec<_>>()
+                handlers
+                    .into_iter()
+                    .map(|f| f.join().unwrap())
+                    .collect::<Vec<_>>()
+            })
         });
-
-        // save the flamegraph
-        if let Some(guard) = guard {
-            if let Ok(report) = guard.report().build() {
-                let local_time = Local::now();
-                let path = std::path::PathBuf::from_str(&format!(
-                    "target/benchmark/{}-{:02}-{:02}/{:02}-{:02}-{}.svg",
-                    local_time.year(),
-                    local_time.month(),
-                    local_time.day(),
-                    local_time.hour(),
-                    local_time.minute(),
-                    config.name()
-                ))
-                .unwrap();
-                if let Some(parent) = path.parent() {
-                    std::fs::create_dir_all(parent).unwrap();
-                }
-                let file = std::fs::File::create(path).unwrap();
-                report.flamegraph(file).unwrap();
-            }
-        }
 
         // aggregate throughput numbers
         let thrput = all_results.iter().fold(B::Result::default(), |v, h| {
