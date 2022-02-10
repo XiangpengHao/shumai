@@ -167,7 +167,7 @@ pub fn shumai_config(args: TokenStream, input: TokenStream) -> TokenStream {
 
     let all_config_derived = all_configs.iter().map(|s| {
         quote! {
-            #[derive(shumai_config_impl::ShumaiConfig, shumai::__dep::serde::Serialize, shumai::__dep::serde::Deserialize, Clone, Debug)]
+            #[derive(shumai::ShumaiConfig, shumai::__dep::serde::Serialize, shumai::__dep::serde::Deserialize, Clone, Debug)]
             #s
         }
     });
