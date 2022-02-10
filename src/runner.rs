@@ -40,7 +40,8 @@ fn bench_one_sample<B: ShumaiBench>(
     let is_running = AtomicBool::new(false);
     let mut pcm_stats = Vec::new();
 
-    crossbeam_utils::thread::scope(|scope| {
+    crossbeam::thread::scope(|scope| {
+        let _thread_guard = ThreadPoison;
         let handlers: Vec<_> = (0..thread_cnt)
             .map(|tid| {
                 let context = Context {
@@ -73,7 +74,7 @@ fn bench_one_sample<B: ShumaiBench>(
             })
             .collect();
 
-        let backoff = crossbeam_utils::Backoff::new();
+        let backoff = crossbeam::utils::Backoff::new();
         while ready_thread.load(Ordering::SeqCst) != thread_cnt as u64 {
             backoff.snooze();
         }
