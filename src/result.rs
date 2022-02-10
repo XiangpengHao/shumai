@@ -5,8 +5,8 @@ use serde_json::Value;
 use std::{path::PathBuf, str::FromStr};
 
 use crate::{
-    metrics::{pcm::PcmStats, perf::PerfCounter, disk_io::DiskUsage},
     env::RunnerEnv,
+    metrics::{disk_io::DiskUsage, pcm::PcmStats, perf::PerfCounter},
     BenchConfig,
 };
 
