@@ -6,6 +6,7 @@ pub struct DiskUsage {
     pub bytes_written: usize,
 }
 
+#[no_sanitize(memory)]
 pub(crate) fn disk_io_of_func<F: FnOnce() -> R, R>(f: F) -> (DiskUsage, R) {
     // Start our disk counter
     let mut sys_info = sysinfo::System::new();

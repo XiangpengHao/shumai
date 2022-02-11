@@ -1,3 +1,5 @@
+#![feature(no_sanitize)]
+
 use std::{
     fmt::Display,
     ops::{Add, AddAssign},
