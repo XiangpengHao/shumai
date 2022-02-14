@@ -23,7 +23,7 @@ a = [1, 2]
 ```rust
 // bench_config.rs
 
-#[toml_config]
+#[config(path = "benchmark.toml")]
 mod config_file {
   pub struct Foo {
     pub name: String,
@@ -59,7 +59,7 @@ impl ShumaiBench for TestBench {
 
 
 fn main() {
-    let config = Foo::load_config("benchmark.toml")
+    let config = Foo::load()
         .expect("Failed to parse config!");
     let repeat = 3;
 

@@ -85,8 +85,8 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
         }
 
         impl #name {
-            pub fn load_with_filter(path: impl AsRef<std::path::Path>, filter: impl AsRef<str>) -> std::option::Option<std::vec::Vec<#name>> {
-                let configs = BenchRootConfig::load_config(path.as_ref()).#lower_name()?;
+            pub fn load_with_filter(filter: impl AsRef<str>) -> std::option::Option<std::vec::Vec<#name>> {
+                let configs = BenchRootConfig::load_config().#lower_name()?;
 
                 let regex_filter =
                             shumai::__dep::regex::Regex::new(filter.as_ref()).expect("failed to parse the benchmark filter into regex expression!");
@@ -94,8 +94,8 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
                 Some(configs)
             }
 
-            pub fn load(path: impl AsRef<std::path::Path>) -> std::option::Option<std::vec::Vec<#name>> {
-                #name::load_with_filter(path, ".*")
+            pub fn load() -> std::option::Option<std::vec::Vec<#name>> {
+                #name::load_with_filter(".*")
             }
         }
 
@@ -118,8 +118,14 @@ pub fn derive_bench_config(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn shumai_config(args: TokenStream, input: TokenStream) -> TokenStream {
-    assert!(args.is_empty());
+pub fn config(args: TokenStream, input: TokenStream) -> TokenStream {
+    let args = parse_macro_input!(args as syn::AttributeArgs)
+        .first()
+        .expect("Benchmark file must be annotated with #[config(path = \"/path/to/file.toml\")]")
+        .clone();
+    let file_path = get_config_file_path(&args)
+        .expect("Benchmark file must be annotated with #[config(path = \"/path/to/file.toml\")]");
+
     let ty: syn::Item = syn::parse_macro_input!(input as syn::Item);
 
     let mut all_configs = Vec::new();
@@ -185,8 +191,8 @@ pub fn shumai_config(args: TokenStream, input: TokenStream) -> TokenStream {
             }
 
             impl BenchRootConfig {
-                fn load_config(path: &std::path::Path)-> Self {
-                    let contents = std::fs::read_to_string(path).unwrap();
+                fn load_config()-> Self {
+                    let contents = std::fs::read_to_string(#file_path).unwrap();
                     let configs: BenchRootConfig =
                         shumai::__dep::toml::from_str(&contents).expect("Unable to parse the toml file");
                     configs
@@ -281,4 +287,30 @@ fn is_matrix_field(f: &syn::Field) -> bool {
 fn gen_lower_ident(f: &syn::Ident) -> syn::Ident {
     let lower_name = f.to_string().to_ascii_lowercase();
     syn::Ident::new(&lower_name, f.span())
+}
+
+fn get_config_file_path(meta: &syn::NestedMeta) -> Option<syn::LitStr> {
+    let meta = if let syn::NestedMeta::Meta(m) = meta {
+        m
+    } else {
+        return None;
+    };
+
+    let name_value = if let syn::Meta::NameValue(v) = meta {
+        v
+    } else {
+        return None;
+    };
+
+    if name_value.path.segments[0].ident != "path" {
+        return None;
+    }
+
+    let v = if let syn::Lit::Str(v) = name_value.lit.clone() {
+        v
+    } else {
+        return None;
+    };
+
+    Some(v)
 }

@@ -1,5 +1,5 @@
 use serde_json::{json, Value};
-use shumai::{shumai_config, Context, ShumaiBench, ShumaiResult};
+use shumai::{config, Context, ShumaiBench, ShumaiResult};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum Workload {
@@ -7,7 +7,7 @@ pub enum Workload {
     B,
 }
 
-#[shumai_config]
+#[config(path = "tests/benchmark.toml")]
 pub mod test_config {
     use super::*;
 
@@ -76,7 +76,7 @@ impl ShumaiBench for TestBench {
 
 #[test]
 fn config() {
-    let config = test_config::Foo::load("tests/benchmark.toml").expect("Failed to parse config!");
+    let config = test_config::Foo::load().expect("Failed to parse config!");
 
     assert_eq!(config.len(), 2);
     for (i, c) in config.iter().enumerate() {
@@ -85,21 +85,20 @@ fn config() {
         assert_eq!(c.a, i + 1);
     }
 
-    let config = test_config::Foo::load_with_filter("tests/benchmark.toml", "foo-2")
-        .expect("Failed to parse config");
+    let config = test_config::Foo::load_with_filter("foo-2").expect("Failed to parse config");
     assert_eq!(config.len(), 1);
 }
 
 #[test]
 #[should_panic(expected = "Failed to parse config!")]
 fn empty_config() {
-    test_config::Bar::load("tests/benchmark.toml").expect("Failed to parse config!");
+    test_config::Bar::load().expect("Failed to parse config!");
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn runner() {
-    let config = test_config::Foo::load("tests/benchmark.toml").expect("Failed to parse config!");
+    let config = test_config::Foo::load().expect("Failed to parse config!");
     let repeat = 2;
 
     for c in config.iter() {
@@ -134,7 +133,7 @@ fn runner() {
 
 #[test]
 fn check_load_cleanup_result() {
-    let config = test_config::Foo::load("tests/benchmark.toml").expect("Failed to parse config!");
+    let config = test_config::Foo::load().expect("Failed to parse config!");
     let repeat = 1;
 
     for c in config.iter() {
@@ -155,7 +154,7 @@ fn check_load_cleanup_result() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn write_json() {
-    let config = test_config::Foo::load("tests/benchmark.toml").expect("Failed to parse config!");
+    let config = test_config::Foo::load().expect("Failed to parse config!");
     let repeat = 1;
 
     for c in config.iter() {
@@ -176,7 +175,7 @@ fn write_json() {
 #[cfg(feature = "perf")]
 #[cfg_attr(miri, ignore)]
 fn simple_perf() {
-    let config = test_config::Foo::load("tests/benchmark.toml").expect("Failed to parse config!");
+    let config = test_config::Foo::load().expect("Failed to parse config!");
     let repeat = 1;
 
     let c = config.first().unwrap();
