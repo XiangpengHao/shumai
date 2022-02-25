@@ -21,6 +21,7 @@ pub struct Bar {
     pub name: String,
     pub threads: Vec<usize>,
     pub time: usize,
+    #[matrix]
     pub workload: Workload,
 }
 

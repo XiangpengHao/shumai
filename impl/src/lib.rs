@@ -117,7 +117,7 @@ pub fn config(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     };
 
-    eprintln!("{}", expanded);
+    // eprintln!("{}", expanded);
     expanded.into()
 }
 
@@ -147,7 +147,7 @@ fn gen_methods(
                 name_gen = quote! {
                     #name_gen
                     if self.#f_name.len() > 1 {
-                        name_lit = format!("{}-{}", name_lit, #f_name);
+                        name_lit = format!("{}-{:?}", name_lit, #f_name);
                     }
                 }
             }
@@ -181,7 +181,7 @@ fn gen_methods(
     if is_matrix_field(current) {
         quote! {
             for i in self.#name.iter() {
-                let #name = *i;
+                let #name = i.clone();
                 #inner
             }
         }
