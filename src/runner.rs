@@ -111,12 +111,11 @@ fn bench_one_sample<B: ShumaiBench>(
 
         // aggregate perf numbers
         #[cfg(feature = "perf")]
-        let perf_counter =
-            all_results
-                .into_iter()
-                .fold(crate::metrics::perf::PerfCounter::new(), |a, mut b| {
-                    return a + b.1.get_stats().unwrap();
-                });
+        let perf_counter = all_results
+            .into_iter()
+            .fold(crate::metrics::perf::PerfCounter::new(), |a, mut b| {
+                a + b.1.get_stats().unwrap()
+            });
 
         SampleResult {
             result: thrput,
