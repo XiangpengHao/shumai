@@ -74,15 +74,6 @@ pub fn config(args: TokenStream, input: TokenStream) -> TokenStream {
         }
 
         impl #name {
-            pub fn load_with_filter(filter: impl AsRef<str>) -> std::option::Option<std::vec::Vec<#name>> {
-                let configs = Self::load()?;
-
-                let regex_filter =
-                            shumai::__dep::regex::Regex::new(filter.as_ref()).expect("failed to parse the benchmark filter into regex expression!");
-                let configs: std::vec::Vec<_> = configs.into_iter().filter(|c| regex_filter.is_match(&c.name)).collect();
-                Some(configs)
-            }
-
             #[allow(non_snake_case)]
             pub fn load() -> std::option::Option<std::vec::Vec<#name>> {
                 let contents = std::fs::read_to_string(#file_path).expect(&format!("failed to read the benchmark config file at {}", #file_path));
@@ -94,7 +85,20 @@ pub fn config(args: TokenStream, input: TokenStream) -> TokenStream {
                 for b in configs.iter() {
                     expanded.extend(b.unfold());
                 }
-                Some(expanded)
+
+
+                match std::env::var("SHUMAI_FILTER") {
+                    Ok(filter) => {
+                        let regex_filter =
+                            shumai::__dep::regex::Regex::new(filter.as_ref())
+                            .expect(&format!("Filter {} from env `SHUMAI_FILTER` is not a valid regex expression!", filter));
+                        let configs: std::vec::Vec<_> = expanded.into_iter().filter(|c| regex_filter.is_match(&c.name)).collect();
+                        Some(configs)
+                    },
+                    Err(_) => {
+                        Some(expanded)
+                    }
+                }
             }
         }
 

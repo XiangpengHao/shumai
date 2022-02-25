@@ -82,7 +82,8 @@ fn config() {
         assert_eq!(c.a, i + 1);
     }
 
-    let config = Foo::load_with_filter("foo-2").expect("Failed to parse config");
+    std::env::set_var("SHUMAI_FILTER", "foo-2");
+    let config = Foo::load().expect("Failed to parse config");
     assert_eq!(config.len(), 1);
 }
 

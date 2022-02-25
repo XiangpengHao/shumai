@@ -13,7 +13,7 @@ Shumai focus on reproducibility, easy-to-analyze and easy-to-use.
 ```toml
 # benchmark.toml
 
-[[foo]]
+[[Foo]]
 name = "foo"
 threads = [1, 2, 3]
 time = 1
@@ -24,20 +24,12 @@ a = [1, 2]
 // bench_config.rs
 
 #[config(path = "benchmark.toml")]
-mod config_file {
-  pub struct Foo {
-    pub name: String,
-    pub threads: Vec<usize>,
-    pub time: usize,
-    #[matrix]
-    pub a: usize,
-  }
-
-  pub struct Bar {
-    pub name: String,
-    pub threads: Vec<usize>,
-    pub time: usize,
-  }
+pub struct Foo {
+  pub name: String,
+  pub threads: Vec<usize>,
+  pub time: usize,
+  #[matrix]
+  pub a: usize,
 }
 
 
@@ -45,16 +37,21 @@ impl ShumaiBench for TestBench {
     type Result = usize;
     type Config = Foo;
 
-    fn load(&self) -> Option<Value> {}
+    fn load(&self) -> Option<Value> {
+        None
+    }
 
     fn run(&self, context: BenchContext<Foo>) -> Self::Result {
 	// Barrier to ensure all threads start at the same time
         context.wait_for_start(); 
 
 	// start benchmark
+        todo!()
     }
 
-    fn cleanup(&self) -> Option<Value> {}
+    fn cleanup(&self) -> Option<Value> {
+        None
+    }
 }
 
 
