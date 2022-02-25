@@ -3,38 +3,8 @@ extern crate syn;
 #[macro_use]
 extern crate quote;
 use proc_macro::TokenStream;
-use syn::{parse_macro_input};
+use syn::parse_macro_input;
 
-/// Generate helper structs/functions for benchmark configs
-/// For example, given the following struct:
-/// ```ignore
-/// #[derive(Debug, BenchConfig, Deserialize, Serialize)]
-/// pub struct TableConfig {
-///     name: String,
-///     #[matrix]
-///     threads: usize,
-/// }
-/// ```
-/// It adds a matrix struct:
-/// ```ignore
-/// pub struct TableConfigMatrix {
-///     name: String,
-///     threads: Vec<usize>
-/// }
-/// ```
-/// The `TableConfigMatrix` allows you to write concise config in .toml files, i.e.
-/// ```toml
-/// [[table]]
-/// name = "dist"
-/// threads = [1, 2, 4, 8, 16, 24]
-/// ```
-/// It also adds the following helper functions:
-/// ```ignore
-/// impl TableConfigMatrix {
-///     fn unfold(&self) -> Vec<TableConfig>;
-///     pub fn is_match(&self, filter: &regex::Regex) -> bool;
-/// }
-/// ```
 #[proc_macro_attribute]
 pub fn config(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = parse_macro_input!(args as syn::AttributeArgs)
@@ -227,7 +197,6 @@ fn is_matrix_field(f: &syn::Field) -> bool {
     }
     false
 }
-
 
 fn get_config_file_path(meta: &syn::NestedMeta) -> Option<syn::LitStr> {
     let meta = if let syn::NestedMeta::Meta(m) = meta {

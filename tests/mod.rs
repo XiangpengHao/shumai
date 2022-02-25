@@ -160,8 +160,7 @@ fn write_json() {
         let file_path = result.write_json().unwrap();
 
         let written_data = std::fs::read_to_string(file_path).unwrap();
-        let result: ShumaiResult<Foo, usize> =
-            serde_json::from_str(&written_data).unwrap();
+        let result: ShumaiResult<Foo, usize> = serde_json::from_str(&written_data).unwrap();
         assert_eq!(result.config.time, 1);
         assert_eq!(result.config.threads, vec![1, 2, 3]);
         assert_eq!(result.bench_results.len(), 3);
