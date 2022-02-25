@@ -1,5 +1,6 @@
 use serde_json::{json, Value};
 use shumai::{config, Context, ShumaiBench, ShumaiResult};
+use shumai_config_impl::config_new;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum Workload {
@@ -7,24 +8,21 @@ pub enum Workload {
     B,
 }
 
-#[config(path = "tests/benchmark.toml")]
-pub mod test_config {
-    use super::*;
+#[config_new(path = "tests/benchmark.toml")]
+pub struct Foo {
+    pub name: String,
+    pub threads: Vec<usize>,
+    pub time: usize,
+    #[matrix]
+    pub a: usize,
+}
 
-    pub struct Foo {
-        pub name: String,
-        pub threads: Vec<usize>,
-        pub time: usize,
-        #[matrix]
-        pub a: usize,
-    }
-
-    pub struct Bar {
-        pub name: String,
-        pub threads: Vec<usize>,
-        pub time: usize,
-        pub workload: Workload,
-    }
+#[config_new(path = "tests/benchmark.toml")]
+pub struct Bar {
+    pub name: String,
+    pub threads: Vec<usize>,
+    pub time: usize,
+    pub workload: Workload,
 }
 
 #[derive(Debug, PartialEq)]
@@ -43,14 +41,14 @@ struct TestBench {
 
 impl ShumaiBench for TestBench {
     type Result = usize;
-    type Config = test_config::Foo;
+    type Config = Foo;
 
     fn load(&mut self) -> Option<Value> {
         self.execution_queue.push(ExecutionSeq::Load);
         Some(json!({"load_finished": true}))
     }
 
-    fn run(&self, context: Context<test_config::Foo>) -> Self::Result {
+    fn run(&self, context: Context<Foo>) -> Self::Result {
         context.wait_for_start();
         let mut sum = 0;
         while context.is_running() {
@@ -76,7 +74,7 @@ impl ShumaiBench for TestBench {
 
 #[test]
 fn config() {
-    let config = test_config::Foo::load().expect("Failed to parse config!");
+    let config = Foo::load().expect("Failed to parse config!");
 
     assert_eq!(config.len(), 2);
     for (i, c) in config.iter().enumerate() {
@@ -85,20 +83,20 @@ fn config() {
         assert_eq!(c.a, i + 1);
     }
 
-    let config = test_config::Foo::load_with_filter("foo-2").expect("Failed to parse config");
+    let config = Foo::load_with_filter("foo-2").expect("Failed to parse config");
     assert_eq!(config.len(), 1);
 }
 
 #[test]
 #[should_panic(expected = "Failed to parse config!")]
 fn empty_config() {
-    test_config::Bar::load().expect("Failed to parse config!");
+    Bar::load().expect("Failed to parse config!");
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn runner() {
-    let config = test_config::Foo::load().expect("Failed to parse config!");
+    let config = Foo::load().expect("Failed to parse config!");
     let repeat = 2;
 
     for c in config.iter() {
@@ -133,7 +131,7 @@ fn runner() {
 
 #[test]
 fn check_load_cleanup_result() {
-    let config = test_config::Foo::load().expect("Failed to parse config!");
+    let config = Foo::load().expect("Failed to parse config!");
     let repeat = 1;
 
     for c in config.iter() {
@@ -154,7 +152,7 @@ fn check_load_cleanup_result() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn write_json() {
-    let config = test_config::Foo::load().expect("Failed to parse config!");
+    let config = Foo::load().expect("Failed to parse config!");
     let repeat = 1;
 
     for c in config.iter() {
@@ -163,7 +161,7 @@ fn write_json() {
         let file_path = result.write_json().unwrap();
 
         let written_data = std::fs::read_to_string(file_path).unwrap();
-        let result: ShumaiResult<test_config::Foo, usize> =
+        let result: ShumaiResult<Foo, usize> =
             serde_json::from_str(&written_data).unwrap();
         assert_eq!(result.config.time, 1);
         assert_eq!(result.config.threads, vec![1, 2, 3]);

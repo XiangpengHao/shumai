@@ -52,7 +52,7 @@ impl PcmStats {
 
         let pm_read = &socket0["Uncore"]["Uncore Counters"]["Persistent Memory Reads"];
         let pm_write = &socket0["Uncore"]["Uncore Counters"]["Persistent Memory Writes"];
-        let dram_read = &socket0["Uncore"]["Uncore Counters"]["DRAM Writes"];
+        let dram_read = &socket0["Uncore"]["Uncore Counters"]["DRAM Reads"];
         let dram_write = &socket0["Uncore"]["Uncore Counters"]["DRAM Writes"];
 
         let upi0 = &val["QPI/UPI Links"]["QPI Counters Socket 0"];

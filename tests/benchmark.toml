@@ -1,4 +1,4 @@
-[[foo]]
+[[Foo]]
 name = "foo"
 threads = [1, 2, 3]
 time = 1

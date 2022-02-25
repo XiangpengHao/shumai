@@ -5,6 +5,123 @@ extern crate quote;
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
+#[proc_macro_attribute]
+pub fn config_new(args: TokenStream, input: TokenStream) -> TokenStream {
+    let args = parse_macro_input!(args as syn::AttributeArgs)
+        .first()
+        .expect("Benchmark file must be annotated with #[config(path = \"/path/to/file.toml\")]")
+        .clone();
+    let file_path = get_config_file_path(&args)
+        .expect("Benchmark file must be annotated with #[config(path = \"/path/to/file.toml\")]");
+
+    let ty: syn::Item = syn::parse_macro_input!(input as syn::Item);
+
+    let item_struct = if let syn::Item::Struct(m) = ty {
+        m
+    } else {
+        panic!("config attribute must be applied to a Struct");
+    };
+
+    let name = item_struct.ident.clone();
+    let matrix_name = gen_matrix_name(&name);
+
+    let fields = if let syn::Fields::Named(syn::FieldsNamed { ref named, .. }) = item_struct.fields
+    {
+        named
+    } else {
+        panic!("config attribute must be applied to a Struct with named fields");
+    };
+
+    let config_fields = fields.iter().map(|f| {
+        let name = &f.ident;
+        let ty = &f.ty;
+
+        if name.as_ref().unwrap() == "threads" && is_matrix_field(f) {
+            panic!("threads can't be marked as matrix, it's matrix by definition");
+        }
+        if is_matrix_field(f) {
+            quote! {#name: std::vec::Vec<#ty>}
+        } else {
+            quote! {#name: #ty}
+        }
+    });
+
+    let methods = gen_methods(fields, 0, &name);
+    let dummy_struct_name = syn::Ident::new(&format!("{}DummyStruct", name), name.span());
+    let expanded = quote! {
+        #[derive(Debug, shumai::__dep::serde::Deserialize)]
+        pub struct #matrix_name {
+            #(#config_fields, )*
+        }
+
+        impl #matrix_name {
+            pub fn unfold(&self) -> std::vec::Vec<#name> {
+                let mut configs: std::vec::Vec<#name> = std::vec::Vec::new();
+
+                #methods
+
+                configs
+            }
+        }
+
+        #[derive(Debug, Clone, shumai::ShumaiConfigNew, shumai::__dep::serde::Serialize, shumai::__dep::serde::Deserialize)]
+        #item_struct
+
+        #[derive(shumai::__dep::serde::Deserialize, Debug)]
+        #[allow(non_snake_case)]
+        struct #dummy_struct_name {
+            #name: std::option::Option<std::vec::Vec<#matrix_name>>,
+        }
+
+        impl #name {
+            pub fn load_with_filter(filter: impl AsRef<str>) -> std::option::Option<std::vec::Vec<#name>> {
+                let configs = Self::load()?;
+
+                let regex_filter =
+                            shumai::__dep::regex::Regex::new(filter.as_ref()).expect("failed to parse the benchmark filter into regex expression!");
+                let configs: std::vec::Vec<_> = configs.into_iter().filter(|c| regex_filter.is_match(&c.name)).collect();
+                Some(configs)
+            }
+
+            #[allow(non_snake_case)]
+            pub fn load() -> std::option::Option<std::vec::Vec<#name>> {
+                let contents = std::fs::read_to_string(#file_path).expect(&format!("failed to read the benchmark config file at {}", #file_path));
+                let configs = shumai::__dep::toml::from_str::<#dummy_struct_name>(&contents).expect(&format!("failed to parse the benchmark config file at {}", #file_path));
+
+                let configs = configs.#name?;
+
+                let mut expanded = std::vec::Vec::new();
+                for b in configs.iter() {
+                    expanded.extend(b.unfold());
+                }
+                Some(expanded)
+            }
+        }
+
+        impl shumai::BenchConfig for #name {
+            fn name(&self) -> &String {
+                &self.name
+            }
+
+            fn thread(&self) -> &[usize] {
+                &self.threads
+            }
+
+            fn bench_sec(&self) -> usize {
+                self.time
+            }
+        }
+    };
+
+    eprintln!("{}", expanded);
+    expanded.into()
+}
+
+#[proc_macro_derive(ShumaiConfigNew, attributes(matrix))]
+pub fn derive_bench_config_new(_input: TokenStream) -> TokenStream {
+    quote!().into()
+}
+
 /// Generate helper structs/functions for benchmark configs
 /// For example, given the following struct:
 /// ```ignore
