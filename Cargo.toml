@@ -18,20 +18,22 @@ sysinfo = "0.23"
 ureq = { version= "2", default-features = false, features = ["json"] }
 rustc_version = "0.4"
 shumai-config-impl = { path = "impl", version = "0.1" }
-pprof = { version = "0.6", features = ["flamegraph"]}
+pprof = { version = "0.6", features = ["flamegraph"], optional = true }
 colored = "2"
 chrono = "0.4"
 regex = "1.5"
 toml = "0.5"
 once_cell = "1.8"
-crossbeam = "0.8"
+crossbeam-utils = "0.8"
 perf-event = "0.4"
 
+[dev-dependencies]
+crossbeam = "0.8"
 
 [features]
 pcm = []
 perf = []
-flamegraph = ["pprof/flamegraph"]
+flamegraph = ["pprof"]
 
 [workspace]
 members = [

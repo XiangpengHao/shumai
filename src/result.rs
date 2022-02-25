@@ -4,11 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{path::PathBuf, str::FromStr};
 
-use crate::{
-    env::RunnerEnv,
-    metrics::{disk_io::DiskUsage, pcm::PcmStats, perf::PerfCounter},
-    BenchConfig,
-};
+use crate::{env::RunnerEnv, metrics::disk_io::DiskUsage, BenchConfig, ShumaiBench};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ShumaiResult<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> {
@@ -72,7 +68,19 @@ impl<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> ShumaiResult<T, R
 pub struct ThreadResult<R: Serialize + Clone> {
     pub thread_cnt: usize,
     pub results: Vec<R>,
-    pub pcm: Vec<PcmStats>,
-    pub perf: Option<PerfCounter>,
     pub disk_usage: DiskUsage,
+    #[cfg(feature = "pcm")]
+    pub pcm: Vec<crate::metrics::pcm::PcmStats>,
+    #[cfg(feature = "perf")]
+    pub perf: crate::metrics::perf::PerfCounter,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct SampleResult<B: ShumaiBench> {
+    pub(crate) result: B::Result,
+    pub(crate) disk_usage: DiskUsage,
+    #[cfg(feature = "perf")]
+    pub(crate) perf: crate::metrics::perf::PerfCounter,
+    #[cfg(feature = "pcm")]
+    pub(crate) pcm: Vec<crate::metrics::pcm::PcmStats>,
 }

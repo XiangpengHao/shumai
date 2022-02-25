@@ -1,6 +1,6 @@
 use sysinfo::{ProcessExt, SystemExt};
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DiskUsage {
     pub bytes_read: usize,
     pub bytes_written: usize,
