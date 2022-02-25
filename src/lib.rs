@@ -1,5 +1,3 @@
-#![feature(no_sanitize)]
-
 use std::{
     fmt::Display,
     ops::{Add, AddAssign},
@@ -15,7 +13,7 @@ mod result;
 mod runner;
 pub use result::ShumaiResult;
 pub use runner::run;
-pub use shumai_config_impl::{config, ShumaiConfig, ShumaiConfigNew};
+pub use shumai_config_impl::{config, ShumaiConfig};
 
 pub mod __dep {
     pub use colored;

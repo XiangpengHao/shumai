@@ -30,7 +30,6 @@ impl RunnerEnv {
     }
 
     #[cfg(not(miri))]
-    #[no_sanitize(memory)]
     pub fn new() -> Self {
         use sysinfo::SystemExt;
 

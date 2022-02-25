@@ -1,6 +1,5 @@
 use serde_json::{json, Value};
 use shumai::{config, Context, ShumaiBench, ShumaiResult};
-use shumai_config_impl::config_new;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum Workload {
@@ -8,7 +7,7 @@ pub enum Workload {
     B,
 }
 
-#[config_new(path = "tests/benchmark.toml")]
+#[config(path = "tests/benchmark.toml")]
 pub struct Foo {
     pub name: String,
     pub threads: Vec<usize>,
@@ -17,7 +16,7 @@ pub struct Foo {
     pub a: usize,
 }
 
-#[config_new(path = "tests/benchmark.toml")]
+#[config(path = "tests/benchmark.toml")]
 pub struct Bar {
     pub name: String,
     pub threads: Vec<usize>,
