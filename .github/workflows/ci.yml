@@ -64,7 +64,6 @@ jobs:
   
   build-all-features:
     needs: test
-        needs: fmt 
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
