@@ -174,7 +174,24 @@ pub fn run<B: ShumaiBench>(
     let mut results: ShumaiResult<B::Config, B::Result> =
         ShumaiResult::new(config.clone(), load_result, RunnerEnv::new());
 
-    for thread_cnt in config.thread().iter() {
+    let threads = match std::env::var("SHUMAI_THREAD") {
+        Ok(s) => {
+            let t = s.parse::<usize>().expect("SHUMAI_THREAD must be a number");
+            eprintln!(
+                "Using environment variable SHUMAI_THREAD to set thread count to {}",
+                t
+            );
+            config
+                .thread()
+                .iter()
+                .filter(|ct| **ct == t)
+                .map(|ct| *ct)
+                .collect::<Vec<_>>()
+        }
+        Err(_) => config.thread().to_vec(),
+    };
+
+    for thread_cnt in threads.iter() {
         print_running(
             running_time.as_secs() as usize,
             config.name(),

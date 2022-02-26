@@ -69,7 +69,7 @@ fn main() {
 
 ```
 
-With the above setup, Shumai will write the benchmark results to json files to allow easy data integration:
+With the above setup, Shumai will write the benchmark results to json files:
 ```json
 {
   "config": {
@@ -126,4 +126,10 @@ With the above setup, Shumai will write the benchmark results to json files to a
 
 - The `perf` feature collects common perf stats, such as `CPU_CYCLES`, `INSTRUCTIONS`, `BRANCH_MISSES` etc.
 
-Note that the above features may be mutual exclusive, i.e. you may enable one feature at a time.
+Note that the above features may be mutually exclusive, i.e. you may enable one feature at a time.
+
+### Control benchmark execution
+Shumai has two environment variables to control how the benchmark is executed:
+- `SHUMAI_THREAD`: only run the benchmark with the specified number of threads, it must be specified in the benchmark config.
+- `SHUMAI_FILTER`: filters the config, it must be a valid regex string.
+k
