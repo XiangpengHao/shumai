@@ -185,7 +185,7 @@ pub fn run<B: ShumaiBench>(
                 .thread()
                 .iter()
                 .filter(|ct| **ct == t)
-                .map(|ct| *ct)
+                .copied()
                 .collect::<Vec<_>>()
         }
         Err(_) => config.thread().to_vec(),

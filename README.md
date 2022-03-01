@@ -4,9 +4,12 @@ https://crates.io/crates/shumai)
 [![shumai](https://github.com/XiangpengHao/shumai/actions/workflows/ci.yml/badge.svg)](https://github.com/XiangpengHao/shumai/actions/workflows/ci.yml)
 [![dependency status](https://deps.rs/crate/shumai/0.1.11/status.svg)](https://deps.rs/crate/shumai/0.1.11)
 
-Shumai is a rust benchmark framework that empowers efficient and correct multi-thread benchmarks.
+Shumai is a multi-thread benchmarking framework that produces accurate and reproducible results.
 
-Shumai focus on reproducibility, easy-to-analyze and easy-to-use.
+Shumai was developed as part of the [Alchemy](https://github.com/XiangpengHao/alchemy) project to fullfil its academic requirements of accurate and reproducible benchmarking.
+Shumai put reproducibility as the first priority by automatically collecting the system information, benchmark configurations, and benchmark results. All of this data will be stored together in a json file.
+The benchmark configurations are also stored in a toml file which should be kept under source control. 
+
 
 ### Example
 
@@ -17,7 +20,7 @@ Shumai focus on reproducibility, easy-to-analyze and easy-to-use.
 name = "foo"
 threads = [1, 2, 3]
 time = 1
-a = [1, 2]
+parameter = [1, 2]
 ```
 
 ```rust
@@ -29,7 +32,7 @@ pub struct Foo {
   pub threads: Vec<usize>,
   pub time: usize,
   #[matrix]
-  pub a: usize,
+  pub parameter: usize,
 }
 
 

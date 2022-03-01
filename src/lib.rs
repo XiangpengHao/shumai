@@ -47,14 +47,6 @@ impl<C: BenchConfig> Context<'_, C> {
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::Relaxed)
     }
-
-    pub fn thread_cnt(&self) -> usize {
-        self.thread_cnt
-    }
-
-    pub fn thread_id(&self) -> usize {
-        self.thread_id
-    }
 }
 
 pub trait BenchResult:
