@@ -29,7 +29,7 @@ impl<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> ShumaiResult<T, R
         }
     }
 
-    pub(crate) fn add_result(&mut self, result: ThreadResult<R>) {
+    pub(crate) fn add(&mut self, result: ThreadResult<R>) {
         self.bench_results.push(result);
     }
 
