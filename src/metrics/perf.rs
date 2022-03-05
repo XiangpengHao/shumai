@@ -25,7 +25,7 @@ mod perf_inner {
             }
         }
 
-        #[derive(Debug, Clone, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Serialize)]
         pub struct PerfCounter {
             $(pub $name: u64,)+
         }

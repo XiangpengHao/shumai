@@ -6,11 +6,22 @@ pub(crate) mod flamegraph;
 pub(crate) mod pcm;
 pub(crate) mod perf;
 
+#[derive(Debug, Serialize)]
+pub struct Measure {
+    name: String,
+    value: serde_json::Value,
+}
+
 pub(crate) trait Measurement {
     fn start(&mut self) {}
-    fn end(&mut self) {}
-    fn per_thread_start(&self) {}
-    fn per_thread_end(&self) {}
+    fn stop(&mut self) {}
 
+    fn result(&mut self) -> Measure;
+}
+
+// PerThreadMeasurement is mutual exclusive with Measurement, is there a way to do this?
+pub(crate) trait PerThreadMeasurement: Sync {
+    fn start(&self) {}
+    fn stop(&self) {}
     fn result(&mut self) -> serde_json::Value;
 }

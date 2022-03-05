@@ -1,12 +1,12 @@
 use chrono::{Datelike, Local, Timelike};
 use colored::Colorize;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::Value;
 use std::{path::PathBuf, str::FromStr};
 
-use crate::{env::RunnerEnv, metrics::disk_io::DiskUsage, BenchConfig, ShumaiBench};
+use crate::{env::RunnerEnv, metrics::Measure, BenchConfig, ShumaiBench};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 pub struct ShumaiResult<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> {
     pub config: T,
     #[serde(rename = "load")]
@@ -64,21 +64,20 @@ impl<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> ShumaiResult<T, R
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 pub struct ThreadResult<R: Serialize + Clone> {
     pub thread_cnt: usize,
     pub results: Vec<R>,
-    pub disk_usage: DiskUsage,
     #[cfg(feature = "pcm")]
     pub pcm: Vec<crate::metrics::pcm::PcmStats>,
     #[cfg(feature = "perf")]
     pub perf: crate::metrics::perf::PerfCounter,
+    pub measurements: Vec<Measure>,
 }
 
 #[derive(Debug, Clone)]
 pub(crate) struct SampleResult<B: ShumaiBench> {
     pub(crate) result: B::Result,
-    pub(crate) disk_usage: DiskUsage,
     #[cfg(feature = "perf")]
     pub(crate) perf: crate::metrics::perf::PerfCounter,
     #[cfg(feature = "pcm")]

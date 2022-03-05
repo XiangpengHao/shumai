@@ -3,9 +3,8 @@
 use crate::{
     env::RunnerEnv,
     metrics::{
-        disk_io::{disk_io_of_func, DiskIoMeasurement},
-        flamegraph::flamegraph_of_func,
-        Measurement,
+        disk_io::DiskIoMeasurement, flamegraph::flamegraph_of_func, Measurement,
+        PerThreadMeasurement,
     },
     result::{SampleResult, ShumaiResult, ThreadResult},
     BenchConfig, BenchResult, Context, ShumaiBench,
@@ -16,7 +15,6 @@ use std::{
     sync::atomic::{AtomicBool, AtomicU64, Ordering},
     time::{Duration, Instant},
 };
-use sysinfo::SystemExt;
 
 struct ThreadPoison;
 impl Drop for ThreadPoison {
@@ -37,7 +35,8 @@ struct Runner<'a, B: ShumaiBench> {
     config: &'a B::Config,
     repeat: usize,
     running_time: Duration,
-    measurements: Vec<Box<dyn Measurement>>,
+    measure: Vec<Box<dyn Measurement>>,
+    per_thread_measure: Vec<Box<dyn PerThreadMeasurement>>,
 }
 
 impl<'a, B: ShumaiBench> Runner<'a, B> {
@@ -71,7 +70,8 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
             repeat,
             running_time,
             threads,
-            measurements,
+            measure: measurements,
+            per_thread_measure: vec![],
         }
     }
 
@@ -109,6 +109,8 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
 
         self.f.on_thread_finished(thread_cnt);
 
+        let measurements = self.measure.iter_mut().map(|m| m.result()).collect();
+
         ThreadResult {
             thread_cnt,
             results: sample_results.iter().map(|f| f.result.clone()).collect(),
@@ -116,7 +118,7 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
             pcm: sample_results.iter().last().unwrap().pcm.clone(), // only from the last sample, or it will be too verbose
             #[cfg(feature = "perf")]
             perf: sample_results.iter().last().unwrap().perf.clone(), // same as above
-            disk_usage: sample_results.iter().last().unwrap().disk_usage.clone(), // same as above
+            measurements,
         }
     }
 
@@ -142,14 +144,21 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                     scope.spawn(|_| {
                         let _thread_guard = ThreadPoison;
 
+                        for m in self.per_thread_measure.iter() {
+                            m.start();
+                        }
+
                         #[cfg(feature = "perf")]
-                        {
-                            crate::metrics::perf::perf_of_func(|| f.run(context))
-                        }
+                        let result = { crate::metrics::perf::perf_of_func(|| f.run(context)) };
+
                         #[cfg(not(feature = "perf"))]
-                        {
-                            (self.f.run(context),)
+                        let result = { (self.f.run(context),) };
+
+                        for m in self.per_thread_measure.iter() {
+                            m.stop();
                         }
+
+                        result
                     })
                 })
                 .collect();
@@ -159,38 +168,44 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                 backoff.snooze();
             }
 
-            let (disk_usage, all_results) = flamegraph_of_func(self.config.name(), || {
-                disk_io_of_func(|| {
-                    // now all threads start running!
-                    is_running.store(true, Ordering::SeqCst);
+            for m in self.measure.iter_mut() {
+                m.start();
+            }
 
-                    let start_time = Instant::now();
+            let all_results = flamegraph_of_func(self.config.name(), || {
+                // now all threads start running!
+                is_running.store(true, Ordering::SeqCst);
+
+                let start_time = Instant::now();
+
+                #[cfg(feature = "pcm")]
+                let mut time_cnt = 0;
+
+                while (Instant::now() - start_time) < self.running_time {
+                    std::thread::sleep(Duration::from_millis(50));
 
                     #[cfg(feature = "pcm")]
-                    let mut time_cnt = 0;
-
-                    while (Instant::now() - start_time) < self.running_time {
-                        std::thread::sleep(Duration::from_millis(50));
-
-                        #[cfg(feature = "pcm")]
-                        {
-                            // roughly every second
-                            time_cnt += 1;
-                            if time_cnt % 20 == 0 {
-                                let stats = crate::metrics::pcm::PcmStats::from_request();
-                                pcm_stats.push(stats);
-                            }
+                    {
+                        // roughly every second
+                        time_cnt += 1;
+                        if time_cnt % 20 == 0 {
+                            let stats = crate::metrics::pcm::PcmStats::from_request();
+                            pcm_stats.push(stats);
                         }
                     }
+                }
 
-                    // stop the world!
-                    is_running.store(false, Ordering::SeqCst);
+                // stop the world!
+                is_running.store(false, Ordering::SeqCst);
 
-                    handlers
-                        .into_iter()
-                        .map(|f| f.join().unwrap())
-                        .collect::<Vec<_>>()
-                })
+                for i in self.measure.iter_mut() {
+                    i.stop();
+                }
+
+                handlers
+                    .into_iter()
+                    .map(|f| f.join().unwrap())
+                    .collect::<Vec<_>>()
             });
 
             // aggregate throughput numbers
@@ -212,7 +227,6 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                 perf: perf_counter,
                 #[cfg(feature = "pcm")]
                 pcm: pcm_stats,
-                disk_usage,
             }
         })
         .unwrap()
