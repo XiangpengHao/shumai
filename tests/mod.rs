@@ -167,4 +167,3 @@ fn write_json() {
         assert_eq!(result["config"]["threads"].as_array().unwrap().len(), 3);
     }
 }
-
