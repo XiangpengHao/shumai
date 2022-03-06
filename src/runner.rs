@@ -2,10 +2,7 @@
 
 use crate::{
     env::RunnerEnv,
-    metrics::{
-        disk_io::DiskIoMeasurement, flamegraph::FlamegraphMeasurement, perf::PerfMeasurement,
-        Measurement, PerThreadMeasurement,
-    },
+    metrics::Measurement,
     result::{BenchValue, ShumaiResult, ThreadResult},
     BenchConfig, BenchResult, Context, ShumaiBench,
 };
@@ -36,7 +33,6 @@ struct Runner<'a, B: ShumaiBench> {
     repeat: usize,
     running_time: Duration,
     measure: Vec<Box<dyn Measurement>>,
-    per_thread_measure: Vec<Box<dyn PerThreadMeasurement>>,
 }
 
 impl<'a, B: ShumaiBench> Runner<'a, B> {
@@ -62,10 +58,15 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
             }
             Err(_) => config.thread().to_vec(),
         };
+
         let measurements: Vec<Box<dyn Measurement>> = vec![
-            Box::new(DiskIoMeasurement::new()),
-            Box::new(FlamegraphMeasurement::new()),
-            Box::new(PerfMeasurement::new()),
+            Box::new(crate::metrics::disk_io::DiskIoMeasurement::new()),
+            #[cfg(feature = "flamegraph")]
+            Box::new(crate::metrics::flamegraph::FlamegraphMeasurement::new()),
+            #[cfg(feature = "perf")]
+            Box::new(crate::metrics::perf::PerfMeasurement::new()),
+            #[cfg(feature = "pcm")]
+            Box::new(crate::metrics::pcm::PcmMeasurement::new()),
         ];
 
         Self {
@@ -75,7 +76,6 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
             running_time,
             threads,
             measure: measurements,
-            per_thread_measure: vec![],
         }
     }
 
@@ -116,8 +116,6 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
         ThreadResult {
             thread_cnt,
             iterations: iter_results,
-            #[cfg(feature = "pcm")]
-            pcm: sample_results.iter().last().unwrap().pcm.clone(), // only from the last sample, or it will be too verbose
         }
     }
 
@@ -126,9 +124,6 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
         let is_running = AtomicBool::new(false);
 
         crossbeam_utils::thread::scope(|scope| {
-            #[cfg(feature = "pcm")]
-            let mut pcm_stats = Vec::new();
-
             let _thread_guard = ThreadPoison;
             let handlers: Vec<_> = (0..thread_cnt)
                 .map(|tid| {
@@ -143,17 +138,7 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                     scope.spawn(|_| {
                         let _thread_guard = ThreadPoison;
 
-                        for m in self.per_thread_measure.iter() {
-                            m.start();
-                        }
-
-                        let result = self.f.run(context);
-
-                        for m in self.per_thread_measure.iter() {
-                            m.stop();
-                        }
-
-                        result
+                        self.f.run(context)
                     })
                 })
                 .collect();
@@ -172,21 +157,8 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
 
             let start_time = Instant::now();
 
-            #[cfg(feature = "pcm")]
-            let mut time_cnt = 0;
-
             while (Instant::now() - start_time) < self.running_time {
                 std::thread::sleep(Duration::from_millis(50));
-
-                #[cfg(feature = "pcm")]
-                {
-                    // roughly every second
-                    time_cnt += 1;
-                    if time_cnt % 20 == 0 {
-                        let stats = crate::metrics::pcm::PcmStats::from_request();
-                        pcm_stats.push(stats);
-                    }
-                }
             }
 
             // stop the world!
@@ -211,8 +183,6 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
             BenchValue {
                 result: thrput,
                 measurements,
-                #[cfg(feature = "pcm")]
-                pcm: pcm_stats,
             }
         })
         .unwrap()

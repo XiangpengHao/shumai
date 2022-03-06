@@ -1,5 +1,9 @@
-use serde::{Deserialize, Serialize};
+use std::sync::{atomic::AtomicBool, Arc};
+
+use serde::Serialize;
 use serde_json::Value;
+
+use super::{Measure, Measurement};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct PcmStats {
@@ -79,6 +83,55 @@ impl PcmStats {
             l3_miss,
             upi_in_util,
             upi_out_util,
+        }
+    }
+}
+
+pub(crate) struct PcmMeasurement {
+    stats: Vec<PcmStats>,
+    thread_handler: Option<std::thread::JoinHandle<Vec<PcmStats>>>,
+    is_running: Arc<AtomicBool>,
+}
+
+impl PcmMeasurement {
+    pub(crate) fn new() -> Self {
+        Self {
+            stats: vec![],
+            thread_handler: None,
+            is_running: Arc::new(AtomicBool::new(true)),
+        }
+    }
+}
+
+impl Measurement for PcmMeasurement {
+    fn start(&mut self) {
+        let is_running = self.is_running.clone();
+        let handler = std::thread::spawn(move || {
+            let mut stats = Vec::new();
+            let mut timer_cnt = 0;
+            while is_running.load(std::sync::atomic::Ordering::Relaxed) {
+                timer_cnt += 1;
+                if timer_cnt % 10 == 0 {
+                    stats.push(PcmStats::from_request());
+                }
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+            stats
+        });
+        self.thread_handler = Some(handler);
+    }
+
+    fn stop(&mut self) {
+        self.is_running
+            .store(false, std::sync::atomic::Ordering::Relaxed);
+        let handler = self.thread_handler.take().unwrap();
+        self.stats = handler.join().unwrap();
+    }
+
+    fn result(&mut self) -> Measure {
+        Measure {
+            name: "pcm".to_string(),
+            value: serde_json::to_value(self.stats.clone()).unwrap(),
         }
     }
 }
