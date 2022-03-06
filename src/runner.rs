@@ -3,9 +3,8 @@
 use crate::{
     env::RunnerEnv,
     metrics::{
-        disk_io::DiskIoMeasurement,
-        flamegraph::{flamegraph_of_func, FlamegraphMeasurement},
-        Measurement, PerThreadMeasurement,
+        disk_io::DiskIoMeasurement, flamegraph::FlamegraphMeasurement, Measurement,
+        PerThreadMeasurement,
     },
     result::{BenchValue, ShumaiResult, ThreadResult},
     BenchConfig, BenchResult, Context, ShumaiBench,
