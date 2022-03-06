@@ -6,7 +6,7 @@ pub(crate) mod flamegraph;
 pub(crate) mod pcm;
 pub(crate) mod perf;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Measure {
     name: String,
     value: serde_json::Value,
@@ -23,5 +23,5 @@ pub(crate) trait Measurement {
 pub(crate) trait PerThreadMeasurement: Sync {
     fn start(&self) {}
     fn stop(&self) {}
-    fn result(&mut self) -> serde_json::Value;
+    fn result(&mut self) -> Measure;
 }

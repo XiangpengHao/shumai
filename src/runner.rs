@@ -3,10 +3,11 @@
 use crate::{
     env::RunnerEnv,
     metrics::{
-        disk_io::DiskIoMeasurement, flamegraph::flamegraph_of_func, Measurement,
-        PerThreadMeasurement,
+        disk_io::DiskIoMeasurement,
+        flamegraph::{flamegraph_of_func, FlamegraphMeasurement},
+        Measurement, PerThreadMeasurement,
     },
-    result::{SampleResult, ShumaiResult, ThreadResult},
+    result::{BenchValue, ShumaiResult, ThreadResult},
     BenchConfig, BenchResult, Context, ShumaiBench,
 };
 
@@ -62,7 +63,10 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
             }
             Err(_) => config.thread().to_vec(),
         };
-        let measurements: Vec<Box<dyn Measurement>> = vec![Box::new(DiskIoMeasurement::new())];
+        let measurements: Vec<Box<dyn Measurement>> = vec![
+            Box::new(DiskIoMeasurement::new()),
+            Box::new(FlamegraphMeasurement::new()),
+        ];
 
         Self {
             f,
@@ -109,20 +113,17 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
 
         self.f.on_thread_finished(thread_cnt);
 
-        let measurements = self.measure.iter_mut().map(|m| m.result()).collect();
-
         ThreadResult {
             thread_cnt,
-            results: sample_results.iter().map(|f| f.result.clone()).collect(),
+            iterations: sample_results,
             #[cfg(feature = "pcm")]
             pcm: sample_results.iter().last().unwrap().pcm.clone(), // only from the last sample, or it will be too verbose
             #[cfg(feature = "perf")]
             perf: sample_results.iter().last().unwrap().perf.clone(), // same as above
-            measurements,
         }
     }
 
-    fn bench_one_iter(&mut self, thread_cnt: usize) -> SampleResult<B> {
+    fn bench_one_iter(&mut self, thread_cnt: usize) -> BenchValue<B::Result> {
         let ready_thread = AtomicU64::new(0);
         let is_running = AtomicBool::new(false);
 
@@ -172,41 +173,39 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                 m.start();
             }
 
-            let all_results = flamegraph_of_func(self.config.name(), || {
-                // now all threads start running!
-                is_running.store(true, Ordering::SeqCst);
+            // now all threads start running!
+            is_running.store(true, Ordering::SeqCst);
 
-                let start_time = Instant::now();
+            let start_time = Instant::now();
+
+            #[cfg(feature = "pcm")]
+            let mut time_cnt = 0;
+
+            while (Instant::now() - start_time) < self.running_time {
+                std::thread::sleep(Duration::from_millis(50));
 
                 #[cfg(feature = "pcm")]
-                let mut time_cnt = 0;
-
-                while (Instant::now() - start_time) < self.running_time {
-                    std::thread::sleep(Duration::from_millis(50));
-
-                    #[cfg(feature = "pcm")]
-                    {
-                        // roughly every second
-                        time_cnt += 1;
-                        if time_cnt % 20 == 0 {
-                            let stats = crate::metrics::pcm::PcmStats::from_request();
-                            pcm_stats.push(stats);
-                        }
+                {
+                    // roughly every second
+                    time_cnt += 1;
+                    if time_cnt % 20 == 0 {
+                        let stats = crate::metrics::pcm::PcmStats::from_request();
+                        pcm_stats.push(stats);
                     }
                 }
+            }
 
-                // stop the world!
-                is_running.store(false, Ordering::SeqCst);
+            // stop the world!
+            is_running.store(false, Ordering::SeqCst);
 
-                for i in self.measure.iter_mut() {
-                    i.stop();
-                }
+            for i in self.measure.iter_mut() {
+                i.stop();
+            }
 
-                handlers
-                    .into_iter()
-                    .map(|f| f.join().unwrap())
-                    .collect::<Vec<_>>()
-            });
+            let all_results = handlers
+                .into_iter()
+                .map(|f| f.join().unwrap())
+                .collect::<Vec<_>>();
 
             // aggregate throughput numbers
             let thrput = all_results.iter().fold(B::Result::default(), |v, h| {
@@ -221,8 +220,11 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                     a + b.1.get_stats().unwrap()
                 });
 
-            SampleResult {
+            let measurements = self.measure.iter_mut().map(|m| m.result()).collect();
+
+            BenchValue {
                 result: thrput,
+                measurements,
                 #[cfg(feature = "perf")]
                 perf: perf_counter,
                 #[cfg(feature = "pcm")]

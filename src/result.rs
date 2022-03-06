@@ -4,7 +4,7 @@ use serde::Serialize;
 use serde_json::Value;
 use std::{path::PathBuf, str::FromStr};
 
-use crate::{env::RunnerEnv, metrics::Measure, BenchConfig, ShumaiBench};
+use crate::{env::RunnerEnv, metrics::Measure, BenchConfig};
 
 #[derive(Debug, Serialize)]
 pub struct ShumaiResult<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> {
@@ -65,21 +65,17 @@ impl<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> ShumaiResult<T, R
 }
 
 #[derive(Debug, Serialize)]
-pub struct ThreadResult<R: Serialize + Clone> {
+pub struct ThreadResult<R: Serialize> {
     pub thread_cnt: usize,
-    pub results: Vec<R>,
-    #[cfg(feature = "pcm")]
-    pub pcm: Vec<crate::metrics::pcm::PcmStats>,
-    #[cfg(feature = "perf")]
-    pub perf: crate::metrics::perf::PerfCounter,
-    pub measurements: Vec<Measure>,
+    pub iterations: Vec<BenchValue<R>>,
 }
 
-#[derive(Debug, Clone)]
-pub(crate) struct SampleResult<B: ShumaiBench> {
-    pub(crate) result: B::Result,
+#[derive(Debug, Clone, Serialize)]
+pub struct BenchValue<R: Serialize> {
+    pub(crate) result: R,
     #[cfg(feature = "perf")]
     pub(crate) perf: crate::metrics::perf::PerfCounter,
     #[cfg(feature = "pcm")]
     pub(crate) pcm: Vec<crate::metrics::pcm::PcmStats>,
+    pub(crate) measurements: Vec<Measure>,
 }
