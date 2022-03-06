@@ -73,8 +73,6 @@ pub struct ThreadResult<R: Serialize> {
 #[derive(Debug, Clone, Serialize)]
 pub struct BenchValue<R: Serialize> {
     pub(crate) result: R,
-    #[cfg(feature = "perf")]
-    pub(crate) perf: crate::metrics::perf::PerfCounter,
     #[cfg(feature = "pcm")]
     pub(crate) pcm: Vec<crate::metrics::pcm::PcmStats>,
     pub(crate) measurements: Vec<Measure>,

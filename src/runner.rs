@@ -3,8 +3,8 @@
 use crate::{
     env::RunnerEnv,
     metrics::{
-        disk_io::DiskIoMeasurement, flamegraph::FlamegraphMeasurement, Measurement,
-        PerThreadMeasurement,
+        disk_io::DiskIoMeasurement, flamegraph::FlamegraphMeasurement, perf::PerfMeasurement,
+        Measurement, PerThreadMeasurement,
     },
     result::{BenchValue, ShumaiResult, ThreadResult},
     BenchConfig, BenchResult, Context, ShumaiBench,
@@ -65,6 +65,7 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
         let measurements: Vec<Box<dyn Measurement>> = vec![
             Box::new(DiskIoMeasurement::new()),
             Box::new(FlamegraphMeasurement::new()),
+            Box::new(PerfMeasurement::new()),
         ];
 
         Self {
@@ -89,7 +90,7 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
     }
 
     fn bench_thread(&mut self, thread_cnt: usize) -> ThreadResult<B::Result> {
-        let mut sample_results = Vec::new();
+        let mut iter_results = Vec::new();
 
         print_running(
             self.running_time.as_secs() as usize,
@@ -107,18 +108,16 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                 i, sample_result.result
             );
 
-            sample_results.push(sample_result);
+            iter_results.push(sample_result);
         }
 
         self.f.on_thread_finished(thread_cnt);
 
         ThreadResult {
             thread_cnt,
-            iterations: sample_results,
+            iterations: iter_results,
             #[cfg(feature = "pcm")]
             pcm: sample_results.iter().last().unwrap().pcm.clone(), // only from the last sample, or it will be too verbose
-            #[cfg(feature = "perf")]
-            perf: sample_results.iter().last().unwrap().perf.clone(), // same as above
         }
     }
 
@@ -148,11 +147,7 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                             m.start();
                         }
 
-                        #[cfg(feature = "perf")]
-                        let result = { crate::metrics::perf::perf_of_func(|| f.run(context)) };
-
-                        #[cfg(not(feature = "perf"))]
-                        let result = { (self.f.run(context),) };
+                        let result = self.f.run(context);
 
                         for m in self.per_thread_measure.iter() {
                             m.stop();
@@ -208,24 +203,14 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
 
             // aggregate throughput numbers
             let thrput = all_results.iter().fold(B::Result::default(), |v, h| {
-                v + h.0.clone().normalize_time(&self.running_time)
+                v + h.clone().normalize_time(&self.running_time)
             });
-
-            // aggregate perf numbers
-            #[cfg(feature = "perf")]
-            let perf_counter = all_results
-                .into_iter()
-                .fold(crate::metrics::perf::PerfCounter::new(), |a, mut b| {
-                    a + b.1.get_stats().unwrap()
-                });
 
             let measurements = self.measure.iter_mut().map(|m| m.result()).collect();
 
             BenchValue {
                 result: thrput,
                 measurements,
-                #[cfg(feature = "perf")]
-                perf: perf_counter,
                 #[cfg(feature = "pcm")]
                 pcm: pcm_stats,
             }

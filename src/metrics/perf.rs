@@ -1,11 +1,10 @@
-#[cfg(feature = "perf")]
-mod perf_inner {
-    use perf_event::events::{Hardware, Software};
-    use perf_event::{Builder, Counter};
-    use serde::{Deserialize, Serialize};
-    use std::ops::{Add, AddAssign};
+use super::{Measure, Measurement};
+use perf_event::events::{Hardware, Software};
+use perf_event::{Builder, Counter};
+use serde::Serialize;
+use std::ops::{Add, AddAssign};
 
-    macro_rules! perf_builder {
+macro_rules! perf_builder {
     ($(($name:ident, $event:expr)),+) => {
         pub(crate) struct PerfStatsRaw{
             $($name: Counter,)+
@@ -15,6 +14,7 @@ mod perf_inner {
             pub(crate) fn new() -> PerfStatsRaw {
                 $(let $name = Builder::new()
                     .kind($event)
+                    .inherit(true)
                     .build()
                     .expect(&format!("failed to create counter for {}", std::stringify!($name)));
                 )+
@@ -28,14 +28,6 @@ mod perf_inner {
         #[derive(Debug, Clone, Serialize)]
         pub struct PerfCounter {
             $(pub $name: u64,)+
-        }
-
-        impl PerfCounter{
-            pub(crate) fn new() -> Self {
-                Self {
-                    $($name: 0,)+
-                }
-            }
         }
 
         impl AddAssign for PerfCounter {
@@ -77,34 +69,48 @@ mod perf_inner {
     };
 }
 
-    perf_builder!(
-        (cycles, Hardware::CPU_CYCLES),
-        (inst, Hardware::INSTRUCTIONS),
-        (branch_miss, Hardware::BRANCH_MISSES),
-        (branches, Hardware::BRANCH_INSTRUCTIONS),
-        (cache_reference, Hardware::CACHE_REFERENCES),
-        (cache_miss, Hardware::CACHE_MISSES),
-        (bus_cycles, Hardware::BUS_CYCLES),
-        (page_faults, Software::PAGE_FAULTS),
-        (context_switch, Software::CONTEXT_SWITCHES),
-        (cpu_migration, Software::CPU_MIGRATIONS)
-    );
+perf_builder!(
+    (cycles, Hardware::CPU_CYCLES),
+    (inst, Hardware::INSTRUCTIONS),
+    (branch_miss, Hardware::BRANCH_MISSES),
+    (branches, Hardware::BRANCH_INSTRUCTIONS),
+    (cache_reference, Hardware::CACHE_REFERENCES),
+    (cache_miss, Hardware::CACHE_MISSES),
+    (bus_cycles, Hardware::BUS_CYCLES),
+    (page_faults, Software::PAGE_FAULTS),
+    (context_switch, Software::CONTEXT_SWITCHES),
+    (cpu_migration, Software::CPU_MIGRATIONS)
+);
+
+pub(crate) struct PerfMeasurement {
+    stats: PerfStatsRaw,
 }
 
-#[cfg(feature = "perf")]
-pub(crate) use perf_inner::{PerfCounter, PerfStatsRaw};
+impl PerfMeasurement {
+    pub(crate) fn new() -> Self {
+        Self {
+            stats: PerfStatsRaw::new(),
+        }
+    }
+}
 
-#[cfg(feature = "perf")]
-pub(crate) fn perf_of_func<F: FnOnce() -> R, R>(f: F) -> (R, PerfStatsRaw) {
-    let mut perf_stats = {
-        let mut perf = PerfStatsRaw::new();
-        perf.enable().expect("unable to enable perf");
-        perf
-    };
+impl Measurement for PerfMeasurement {
+    fn start(&mut self) {
+        self.stats.enable().expect("unable to enable perf counters");
+    }
 
-    let rv = f();
+    fn stop(&mut self) {
+        self.stats
+            .disable()
+            .expect("unable to disable perf counters");
+    }
 
-    perf_stats.disable().expect("unable to disable perf");
+    fn result(&mut self) -> Measure {
+        let stats = self.stats.get_stats().expect("unable to get perf counters");
 
-    (rv, perf_stats)
+        Measure {
+            name: "perf".to_string(),
+            value: serde_json::to_value(stats).unwrap(),
+        }
+    }
 }

@@ -168,26 +168,3 @@ fn write_json() {
     }
 }
 
-#[test]
-#[cfg(feature = "perf")]
-#[cfg_attr(miri, ignore)]
-fn simple_perf() {
-    let config = Foo::load().expect("Failed to parse config!");
-    let repeat = 1;
-
-    let c = config.first().unwrap();
-    let mut benchmark = TestBench::default();
-    let result = shumai::run(&mut benchmark, c, repeat);
-    let bench_results = result.bench_results;
-    assert_eq!(bench_results.len(), c.threads.len());
-    for rv in bench_results {
-        let perf = rv.perf;
-        // These counters should all be positive
-        assert!(perf.cycles > 0);
-        assert!(perf.inst > 0);
-        assert!(perf.branch_miss > 0);
-        assert!(perf.branches > 0);
-        assert!(perf.cache_reference > 0);
-        assert!(perf.cache_miss > 0);
-    }
-}
