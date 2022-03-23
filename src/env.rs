@@ -21,11 +21,13 @@ impl RunnerEnv {
     #[cfg(miri)]
     pub fn new() -> Self {
         Self {
-            cpu_num: 0,
-            cpu_speed: 0,
-            hostname: "".to_string(),
-            os_release: "".to_string(),
+            kernel_version: "".to_string(),
             rustc_version: "".to_string(),
+            hostname: "".to_string(),
+            os_version: "".to_string(),
+            cpu_num: 0,
+            physical_core_num: 0,
+            total_memory: 0,
         }
     }
 
