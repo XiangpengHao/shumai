@@ -28,14 +28,15 @@ pub mod __dep {
 
 /// The context send to MultiBench::run()
 pub struct Context<'a, C: BenchConfig> {
+    running: &'a AtomicBool,
+    ready_thread: &'a AtomicU64,
     pub thread_id: usize,
     pub thread_cnt: usize,
     pub config: &'a C,
-    ready_thread: &'a AtomicU64,
-    running: &'a AtomicBool,
+    pub stream_val: &'a AtomicU64,
 }
 
-impl<C: BenchConfig> Context<'_, C> {
+impl<'a, C: BenchConfig> Context<'a, C> {
     /// A barrier to ensure all threads start at exactly the same time,
     /// every run() should call context.wait_for_start() right after initialization or it will block forever.
     pub fn wait_for_start(&self) {
@@ -48,6 +49,30 @@ impl<C: BenchConfig> Context<'_, C> {
     /// Main thread will let each bencher know whether to stop running
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::Relaxed)
+    }
+
+    /// Add a value to the stream value
+    /// An example use case is to monitor the performance changes
+    pub fn incr_stream_val(&self, val: u64) {
+        self.stream_val.fetch_add(val, Ordering::Relaxed);
+    }
+
+    pub(crate) fn new(
+        thread_id: usize,
+        thread_cnt: usize,
+        config: &'a C,
+        ready_thread: &'a AtomicU64,
+        running: &'a AtomicBool,
+        stream_val: &'a AtomicU64,
+    ) -> Self {
+        Context {
+            running,
+            ready_thread,
+            thread_id,
+            thread_cnt,
+            config,
+            stream_val,
+        }
     }
 }
 

@@ -74,4 +74,5 @@ pub struct ThreadResult<R: Serialize> {
 pub struct BenchValue<R: Serialize> {
     pub(crate) result: R,
     pub(crate) measurements: Vec<Measure>,
+    pub(crate) streamed_values: Vec<u64>,
 }

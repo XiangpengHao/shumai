@@ -122,19 +122,21 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
     fn bench_one_iter(&mut self, thread_cnt: usize) -> BenchValue<B::Result> {
         let ready_thread = AtomicU64::new(0);
         let is_running = AtomicBool::new(false);
+        let stream_val = AtomicU64::new(0);
+        let mut streamed_values = Vec::new();
 
         crossbeam_utils::thread::scope(|scope| {
             let _thread_guard = ThreadPoison;
             let handlers: Vec<_> = (0..thread_cnt)
                 .map(|tid| {
-                    let context = Context {
-                        thread_id: tid,
+                    let context = Context::new(
+                        tid,
                         thread_cnt,
-                        config: self.config,
-                        ready_thread: &ready_thread,
-                        running: &is_running,
-                    };
-
+                        self.config,
+                        &ready_thread,
+                        &is_running,
+                        &stream_val,
+                    );
                     scope.spawn(|_| {
                         let _thread_guard = ThreadPoison;
 
@@ -157,7 +159,12 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
 
             let start_time = Instant::now();
 
+            let mut counter = 0;
             while (Instant::now() - start_time) < self.running_time {
+                counter += 1;
+                if counter % 4 == 0 {
+                    streamed_values.push(stream_val.load(Ordering::Relaxed));
+                }
                 std::thread::sleep(Duration::from_millis(50));
             }
 
@@ -178,11 +185,20 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                 v + h.clone().normalize_time(&self.running_time)
             });
 
+            assert!(!streamed_values.is_empty());
+            let mut prev = 0;
+            for i in streamed_values.iter_mut() {
+                let old_i = *i;
+                *i -= prev;
+                prev = old_i;
+            }
+
             let measurements = self.measure.iter_mut().map(|m| m.result()).collect();
 
             BenchValue {
                 result: thrput,
                 measurements,
+                streamed_values,
             }
         })
         .unwrap()

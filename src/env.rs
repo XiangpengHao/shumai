@@ -37,7 +37,7 @@ impl RunnerEnv {
 
         let sys = sysinfo::System::new_all();
 
-        let cpu_num = sys.processors().len();
+        let cpu_num = sys.physical_core_count().unwrap_or(0);
         let total_memory = sys.total_memory() as usize;
         let hostname = sys.host_name().unwrap();
         let kernel_version = sys.kernel_version().unwrap();
