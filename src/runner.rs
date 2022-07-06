@@ -125,7 +125,7 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
         let stream_val = AtomicU64::new(0);
         let mut streamed_values = Vec::new();
 
-        crossbeam_utils::thread::scope(|scope| {
+        std::thread::scope(|scope| {
             let _thread_guard = ThreadPoison;
             let handlers: Vec<_> = (0..thread_cnt)
                 .map(|tid| {
@@ -137,7 +137,7 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                         &is_running,
                         &stream_val,
                     );
-                    scope.spawn(|_| {
+                    scope.spawn(|| {
                         let _thread_guard = ThreadPoison;
 
                         self.f.run(context)
@@ -145,9 +145,8 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                 })
                 .collect();
 
-            let backoff = crossbeam_utils::Backoff::new();
             while ready_thread.load(Ordering::SeqCst) != thread_cnt as u64 {
-                backoff.snooze();
+                std::thread::sleep(Duration::from_millis(1));
             }
 
             for m in self.measure.iter_mut() {
@@ -201,7 +200,6 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
                 streamed_values,
             }
         })
-        .unwrap()
     }
 }
 
