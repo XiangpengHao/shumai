@@ -2,7 +2,7 @@
 [![Crates.io](https://img.shields.io/crates/v/shumai.svg)](
 https://crates.io/crates/shumai)
 [![shumai](https://github.com/XiangpengHao/shumai/actions/workflows/ci.yml/badge.svg)](https://github.com/XiangpengHao/shumai/actions/workflows/ci.yml)
-[![dependency status](https://deps.rs/crate/shumai/0.1.11/status.svg)](https://deps.rs/crate/shumai/0.1.11)
+[![dependency status](https://deps.rs/crate/shumai/status.svg)](https://deps.rs/crate/shumai)
 
 Shumai is a multi-thread benchmarking framework that produces accurate and reproducible results.
 
