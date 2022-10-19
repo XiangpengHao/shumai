@@ -33,7 +33,6 @@ pub struct Context<'a, C: BenchConfig> {
     pub thread_id: usize,
     pub thread_cnt: usize,
     pub config: &'a C,
-    pub stream_val: &'a AtomicU64,
 }
 
 impl<'a, C: BenchConfig> Context<'a, C> {
@@ -51,19 +50,12 @@ impl<'a, C: BenchConfig> Context<'a, C> {
         self.running.load(Ordering::Relaxed)
     }
 
-    /// Add a value to the stream value
-    /// An example use case is to monitor the performance changes
-    pub fn incr_stream_val(&self, val: u64) {
-        self.stream_val.fetch_add(val, Ordering::Relaxed);
-    }
-
     pub(crate) fn new(
         thread_id: usize,
         thread_cnt: usize,
         config: &'a C,
         ready_thread: &'a AtomicU64,
         running: &'a AtomicBool,
-        stream_val: &'a AtomicU64,
     ) -> Self {
         Context {
             running,
@@ -71,7 +63,6 @@ impl<'a, C: BenchConfig> Context<'a, C> {
             thread_id,
             thread_cnt,
             config,
-            stream_val,
         }
     }
 }

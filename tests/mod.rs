@@ -53,7 +53,6 @@ impl ShumaiBench for TestBench {
         let mut sum = 0;
         while context.is_running() {
             sum += context.config.a;
-            context.incr_stream_val(1);
         }
         self.execution_queue.push(ExecutionSeq::Run);
         sum
