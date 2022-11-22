@@ -82,7 +82,14 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
     #[must_use]
     fn load(&mut self) -> Option<serde_json::Value> {
         print_loading();
-        self.f.load()
+        let start = Instant::now();
+        let rv = self.f.load();
+        println!(
+            "{} {}",
+            "finished in".cyan(),
+            format!("{:.2?}", start.elapsed()).cyan()
+        );
+        rv
     }
 
     fn threads(&self) -> Vec<usize> {
@@ -210,7 +217,7 @@ fn is_profile_by_time() -> Option<usize> {
 }
 
 fn print_loading() {
-    println!(
+    print!(
         "{}\n{}",
         "============================================================".red(),
         "Loading data...".cyan()
