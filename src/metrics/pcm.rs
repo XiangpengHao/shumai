@@ -119,7 +119,8 @@ impl Measurement for PcmMeasurement {
             stats
         });
         self.thread_handler = Some(handler);
-        self.is_running.store(true, std::sync::atomic::Ordering::Relaxed);
+        self.is_running
+            .store(true, std::sync::atomic::Ordering::Relaxed);
     }
 
     fn stop(&mut self) {
