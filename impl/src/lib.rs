@@ -47,7 +47,7 @@ pub fn config(args: TokenStream, input: TokenStream) -> TokenStream {
     });
 
     let methods = gen_methods(fields, 0, &name);
-    let dummy_struct_name = syn::Ident::new(&format!("{}DummyStruct", name), name.span());
+    let dummy_struct_name = syn::Ident::new(&format!("{name}DummyStruct"), name.span());
     let expanded = quote! {
         #[derive(Debug, shumai::__dep::serde::Deserialize)]
         pub struct #matrix_name {
@@ -127,7 +127,7 @@ pub fn derive_bench_config(_input: TokenStream) -> TokenStream {
 }
 
 fn gen_matrix_name(name: &syn::Ident) -> syn::Ident {
-    let gen_name = format!("{}Matrix", name);
+    let gen_name = format!("{name}Matrix");
     syn::Ident::new(&gen_name, name.span())
 }
 
