@@ -2,15 +2,21 @@ use chrono::{Datelike, Local, Timelike};
 use colored::Colorize;
 use serde::Serialize;
 use serde_json::Value;
-use std::{path::PathBuf, str::FromStr};
+use std::{path::PathBuf, str::FromStr, time::Duration};
 
 use crate::{env::RunnerEnv, metrics::Measure, BenchConfig};
+
+#[derive(Debug, Serialize)]
+pub struct LoadResults {
+    pub time_elapsed: Duration,
+    pub user_metrics: Option<Value>,
+}
 
 #[derive(Debug, Serialize)]
 pub struct ShumaiResult<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> {
     pub config: T,
     #[serde(rename = "load")]
-    pub load_results: Option<Value>,
+    pub load_results: LoadResults,
     #[serde(rename = "cleanup")]
     pub cleanup_results: Option<Value>,
     pub env: RunnerEnv,
@@ -19,7 +25,7 @@ pub struct ShumaiResult<T: Serialize + Clone + BenchConfig, R: Serialize + Clone
 }
 
 impl<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> ShumaiResult<T, R> {
-    pub(crate) fn new(config: T, load_results: Option<Value>, env: RunnerEnv) -> Self {
+    pub(crate) fn new(config: T, load_results: LoadResults, env: RunnerEnv) -> Self {
         Self {
             config,
             load_results,

@@ -3,7 +3,7 @@
 use crate::{
     env::RunnerEnv,
     metrics::Measurement,
-    result::{BenchValue, ShumaiResult, ThreadResult},
+    result::{BenchValue, LoadResults, ShumaiResult, ThreadResult},
     BenchConfig, BenchResult, Context, ShumaiBench,
 };
 
@@ -80,16 +80,20 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
     }
 
     #[must_use]
-    fn load(&mut self) -> Option<serde_json::Value> {
+    fn load(&mut self) -> LoadResults {
         print_loading();
         let start = Instant::now();
         let rv = self.f.load();
+        let elapsed = start.elapsed();
         println!(
             "{} {}",
             "finished in".cyan(),
-            format!("{:.2?}", start.elapsed()).cyan()
+            format!("{:.2?}", elapsed).cyan()
         );
-        rv
+        LoadResults {
+            time_elapsed: elapsed,
+            user_metrics: rv,
+        }
     }
 
     fn threads(&self) -> Vec<usize> {

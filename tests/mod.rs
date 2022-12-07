@@ -141,8 +141,9 @@ fn check_load_cleanup_result() {
 
         assert_eq!(
             "true",
-            result.load_results.unwrap()["load_finished"].to_string()
+            result.load_results.user_metrics.unwrap()["load_finished"].to_string()
         );
+        assert!(result.load_results.time_elapsed.as_nanos() > 0);
         assert_eq!(
             "true",
             result.cleanup_results.unwrap()["cleanup_finished"].to_string()
