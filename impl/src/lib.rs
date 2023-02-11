@@ -3,7 +3,7 @@ extern crate syn;
 #[macro_use]
 extern crate quote;
 use proc_macro::TokenStream;
-use syn::parse_macro_input;
+use syn::{parse_macro_input, GenericArgument};
 
 #[proc_macro_attribute]
 pub fn config(args: TokenStream, input: TokenStream) -> TokenStream {
@@ -40,7 +40,12 @@ pub fn config(args: TokenStream, input: TokenStream) -> TokenStream {
             panic!("threads can't be marked as matrix, it's matrix by definition");
         }
         if is_matrix_field(f) {
-            quote! {#name: std::vec::Vec<#ty>}
+            // // If the type is Option, return Option<Vec<ty>>; otherwise return Vec<ty>
+            if let Some(t) = get_optional_inner_type(ty) {
+                quote! {#name: std::option::Option<std::vec::Vec<#t>>}
+            } else {
+                quote! {#name: std::vec::Vec<#ty>}
+            }
         } else {
             quote! {#name: #ty}
         }
@@ -144,10 +149,21 @@ fn gen_methods(
         for f in fields {
             let f_name = &f.ident;
             if is_matrix_field(f) {
-                name_gen = quote! {
-                    #name_gen
-                    if self.#f_name.len() > 1 {
-                        name_lit = format!("{}-{:?}", name_lit, #f_name);
+                if get_optional_inner_type(&f.ty).is_some() {
+                    name_gen = quote! {
+                        #name_gen
+                        if let Some(t_v) = &self.#f_name {
+                            if t_v.len() > 1 {
+                                name_lit = format!("{}-{:?}", name_lit, #f_name);
+                            }
+                        }
+                    }
+                } else {
+                    name_gen = quote! {
+                        #name_gen
+                        if self.#f_name.len() > 1 {
+                            name_lit = format!("{}-{:?}", name_lit, #f_name);
+                        }
                     }
                 }
             }
@@ -179,10 +195,24 @@ fn gen_methods(
     let name = &current.ident;
 
     if is_matrix_field(current) {
-        quote! {
-            for i in self.#name.iter() {
-                let #name = i.clone();
-                #inner
+        if get_optional_inner_type(&current.ty).is_some() {
+            quote! {
+                if let Some(#name) = &self.#name {
+                    for i in #name.iter() {
+                        let #name = Some(i.clone());
+                        #inner
+                    }
+                }else{
+                    let #name = None;
+                    #inner
+                }
+            }
+        } else {
+            quote! {
+                for i in self.#name.iter() {
+                    let #name = i.clone();
+                    #inner
+                }
             }
         }
     } else {
@@ -200,6 +230,33 @@ fn is_matrix_field(f: &syn::Field) -> bool {
         }
     }
     false
+}
+
+fn get_optional_inner_type(ty: &syn::Type) -> Option<&GenericArgument> {
+    match ty {
+        syn::Type::Path(syn::TypePath {
+            path: syn::Path { segments, .. },
+            ..
+        }) => {
+            if segments.len() == 1 {
+                let segment = segments.first().unwrap();
+                if segment.ident == "Option" {
+                    let option_inner = &segment.arguments;
+                    match option_inner {
+                        syn::PathArguments::AngleBracketed(
+                            syn::AngleBracketedGenericArguments { args, .. },
+                        ) => {
+                            let ty = args.first().unwrap();
+                            return Some(ty);
+                        }
+                        _ => panic!("Option must be used with angle bracketed generic arguments"),
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+    None
 }
 
 fn get_config_file_path(meta: &syn::NestedMeta) -> Option<syn::LitStr> {

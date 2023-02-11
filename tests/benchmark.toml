@@ -3,3 +3,10 @@ name = "foo"
 threads = [1, 2, 3]
 time = 1
 a = [1, 2]
+
+[[Foo]]
+name = "f_opt"
+threads = [1]
+time = 1
+a = [1]
+c = [1, 2]

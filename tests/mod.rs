@@ -14,6 +14,8 @@ pub struct Foo {
     pub time: usize,
     #[matrix]
     pub a: usize,
+    #[matrix]
+    pub c: Option<usize>,
 }
 
 #[config(path = "tests/benchmark.toml")]
@@ -74,18 +76,35 @@ impl ShumaiBench for TestBench {
 
 #[test]
 fn config() {
+    std::env::set_var("SHUMAI_FILTER", "foo-foo");
     let config = Foo::load().expect("Failed to parse config!");
-
+    println!("{:?}", config);
     assert_eq!(config.len(), 2);
     for (i, c) in config.iter().enumerate() {
+        let n = i + 1;
+        assert_eq!(c.name, format!("foo-foo-{n:}").to_string());
         assert_eq!(c.threads, vec![1, 2, 3]);
         assert_eq!(c.time, 1);
         assert_eq!(c.a, i + 1);
+        assert_eq!(c.c, None);
     }
 
     std::env::set_var("SHUMAI_FILTER", "foo-2");
     let config = Foo::load().expect("Failed to parse config");
     assert_eq!(config.len(), 1);
+
+    std::env::set_var("SHUMAI_FILTER", "f_opt");
+    let config = Foo::load().expect("Failed to parse config");
+    println!("{:?}", config);
+    assert_eq!(config.len(), 2);
+    for (i, c) in config.iter().enumerate() {
+        let n = i + 1;
+        assert_eq!(c.name, format!("foo-f_opt-Some({n:})").to_string());
+        assert_eq!(c.threads, vec![1]);
+        assert_eq!(c.time, 1);
+        assert_eq!(c.a, 1);
+        assert_eq!(c.c, Some(1 + i));
+    }
 }
 
 #[test]
