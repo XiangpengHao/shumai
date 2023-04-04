@@ -178,12 +178,15 @@ fn write_json() {
 
     for c in config.iter() {
         let mut benchmark = TestBench::default();
-        let result = shumai::run(&mut benchmark, c, repeat);
-        let file_path = result.write_json().unwrap();
+        let s_result = shumai::run(&mut benchmark, c, repeat);
+        let file_path = s_result.write_json().unwrap();
 
         let written_data = std::fs::read_to_string(file_path).unwrap();
         let result: serde_json::Value = serde_json::from_str(&written_data).unwrap();
         assert_eq!(result["config"]["time"].as_u64().unwrap(), 1);
-        assert_eq!(result["config"]["threads"].as_array().unwrap().len(), 3);
+        assert_eq!(
+            result["config"]["threads"].as_array().unwrap().len(),
+            s_result.config.threads.len()
+        );
     }
 }
