@@ -22,8 +22,8 @@ pub fn config(args: TokenStream, input: TokenStream) -> TokenStream {
         panic!("config attribute must be applied to a Struct");
     };
 
-    let name = item_struct.ident.clone();
-    let matrix_name = gen_matrix_name(&name);
+    let name = &item_struct.ident;
+    let matrix_name = gen_matrix_name(name);
 
     let fields = if let syn::Fields::Named(syn::FieldsNamed { ref named, .. }) = item_struct.fields
     {
@@ -51,7 +51,7 @@ pub fn config(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     });
 
-    let methods = gen_methods(fields, 0, &name);
+    let methods = gen_methods(fields, 0, name);
     let dummy_struct_name = syn::Ident::new(&format!("{name}DummyStruct"), name.span());
     let expanded = quote! {
         #[derive(Debug, shumai::__dep::serde::Deserialize)]
@@ -233,28 +233,27 @@ fn is_matrix_field(f: &syn::Field) -> bool {
 }
 
 fn get_optional_inner_type(ty: &syn::Type) -> Option<&GenericArgument> {
-    match ty {
-        syn::Type::Path(syn::TypePath {
-            path: syn::Path { segments, .. },
-            ..
-        }) => {
-            if segments.len() == 1 {
-                let segment = segments.first().unwrap();
-                if segment.ident == "Option" {
-                    let option_inner = &segment.arguments;
-                    match option_inner {
-                        syn::PathArguments::AngleBracketed(
-                            syn::AngleBracketedGenericArguments { args, .. },
-                        ) => {
-                            let ty = args.first().unwrap();
-                            return Some(ty);
-                        }
-                        _ => panic!("Option must be used with angle bracketed generic arguments"),
+    if let syn::Type::Path(syn::TypePath {
+        path: syn::Path { segments, .. },
+        ..
+    }) = ty
+    {
+        if segments.len() == 1 {
+            let segment = segments.first().unwrap();
+            if segment.ident == "Option" {
+                let option_inner = &segment.arguments;
+                match option_inner {
+                    syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
+                        args,
+                        ..
+                    }) => {
+                        let ty = args.first().unwrap();
+                        return Some(ty);
                     }
+                    _ => panic!("Option must be used with angle bracketed generic arguments"),
                 }
             }
         }
-        _ => {}
     }
     None
 }
