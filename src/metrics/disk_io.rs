@@ -1,5 +1,3 @@
-use sysinfo::{ProcessExt, SystemExt};
-
 use super::{Measure, Measurement};
 
 pub(crate) struct DiskIoMeasurement {
@@ -18,7 +16,6 @@ impl DiskIoMeasurement {
 
 impl Measurement for DiskIoMeasurement {
     fn start(&mut self) {
-        self.sys_info.refresh_disks();
         self.sys_info.refresh_processes();
     }
 

@@ -33,15 +33,13 @@ impl RunnerEnv {
 
     #[cfg(not(miri))]
     pub fn new() -> Self {
-        use sysinfo::SystemExt;
-
         let sys = sysinfo::System::new_all();
 
         let cpu_num = sys.physical_core_count().unwrap_or(0);
         let total_memory = sys.total_memory() as usize;
-        let hostname = sys.host_name().unwrap();
-        let kernel_version = sys.kernel_version().unwrap();
-        let os_version = sys.os_version().unwrap();
+        let hostname = sysinfo::System::host_name().unwrap();
+        let kernel_version = sysinfo::System::kernel_version().unwrap();
+        let os_version = sysinfo::System::os_version().unwrap();
         let rustc_ver = rustc_version::version().unwrap();
         let rustc_ver = format!(
             "{}.{}.{}",

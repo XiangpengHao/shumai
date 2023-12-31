@@ -19,7 +19,6 @@ pub use shumai_config_impl::{config, ShumaiConfig};
 
 pub mod __dep {
     pub use colored;
-    pub use once_cell;
     pub use regex;
     pub use serde;
     pub use serde_json;
