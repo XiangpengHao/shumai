@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RunnerEnv {
     kernel_version: String,
-    rustc_version: String,
     hostname: String,
     os_version: String,
     cpu_num: usize,
@@ -22,7 +21,6 @@ impl RunnerEnv {
     pub fn new() -> Self {
         Self {
             kernel_version: "".to_string(),
-            rustc_version: "".to_string(),
             hostname: "".to_string(),
             os_version: "".to_string(),
             cpu_num: 0,
@@ -40,11 +38,6 @@ impl RunnerEnv {
         let hostname = sysinfo::System::host_name().unwrap();
         let kernel_version = sysinfo::System::kernel_version().unwrap();
         let os_version = sysinfo::System::os_version().unwrap();
-        let rustc_ver = rustc_version::version().unwrap();
-        let rustc_ver = format!(
-            "{}.{}.{}",
-            rustc_ver.major, rustc_ver.minor, rustc_ver.patch
-        );
 
         Self {
             cpu_num,
@@ -53,7 +46,6 @@ impl RunnerEnv {
             hostname,
             kernel_version,
             os_version,
-            rustc_version: rustc_ver,
         }
     }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "shumai"
-version = "0.2.13"
+version = "0.2.14"
 edition = "2021"
 description = "A benchmark framework that empowers efficient and correct multi-thread benchmarks."
 keywords = ["benchmark", "multi-thread"]
@@ -18,7 +18,6 @@ sysinfo = { version = "0.30", default-features = false }
 ureq = { version = "2.9.1", default-features = false, features = [
 	"json",
 ], optional = true }
-rustc_version = "0.4.0"
 shumai-config-impl = { path = "impl", version = "0.2" }
 pprof = { version = "0.13", features = ["flamegraph"], optional = true }
 colored = "2.1.0"
