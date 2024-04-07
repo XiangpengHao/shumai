@@ -74,6 +74,7 @@ impl<T: Serialize + Clone + BenchConfig, R: Serialize + Clone> ShumaiResult<T, R
 pub struct ThreadResult<R: Serialize> {
     pub thread_cnt: usize,
     pub iterations: Vec<BenchValue<R>>,
+    pub on_thread_finished: Option<Value>,
 }
 
 #[derive(Debug, Clone, Serialize)]

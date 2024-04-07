@@ -1,6 +1,6 @@
 [package]
 name = "shumai"
-version = "0.2.14"
+version = "0.2.15"
 edition = "2021"
 description = "A benchmark framework that empowers efficient and correct multi-thread benchmarks."
 keywords = ["benchmark", "multi-thread"]
@@ -15,19 +15,19 @@ license = "MIT"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sysinfo = { version = "0.30", default-features = false }
-ureq = { version = "2.9.1", default-features = false, features = [
+ureq = { version = "2.9.6", default-features = false, features = [
 	"json",
 ], optional = true }
 shumai-config-impl = { path = "impl", version = "0.2" }
 pprof = { version = "0.13", features = ["flamegraph"], optional = true }
 colored = "2.1.0"
-chrono = { version = "0.4.31", default-features = false, features = ["clock"] }
-regex = { version = "1.10.2", default-features = false, features = ["std"] }
-toml = { version = "0.8.8", default-features = false, features = ["parse"] }
+chrono = { version = "0.4.37", default-features = false, features = ["clock"] }
+regex = { version = "1.10.4", default-features = false, features = ["std"] }
+toml = { version = "0.8.12", default-features = false, features = ["parse"] }
 perf-event = { version = "0.4.8", optional = true }
 
 [dev-dependencies]
-crossbeam = "0.8.3"
+crossbeam = "0.8.4"
 
 [features]
 pcm = ["ureq"]

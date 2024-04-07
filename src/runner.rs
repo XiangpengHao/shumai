@@ -122,11 +122,12 @@ impl<'a, B: ShumaiBench> Runner<'a, B> {
             iter_results.push(sample_result);
         }
 
-        self.f.on_thread_finished(thread_cnt);
+        let on_thread_finished = self.f.on_thread_finished(thread_cnt);
 
         ThreadResult {
             thread_cnt,
             iterations: iter_results,
+            on_thread_finished,
         }
     }
 
@@ -222,7 +223,7 @@ fn is_profile_by_time() -> Option<usize> {
 
 fn print_loading() {
     print!(
-        "{}\n{}",
+        "{}\n{}\n",
         "============================================================".red(),
         "Loading data...".cyan()
     );

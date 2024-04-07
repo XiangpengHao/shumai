@@ -60,12 +60,14 @@ impl ShumaiBench for TestBench {
         sum
     }
 
-    fn on_iteration_finished(&mut self, _cur_iter: usize) {
+    fn on_iteration_finished(&mut self, _cur_iter: usize) -> Option<Value> {
         self.execution_queue.push(ExecutionSeq::IterationFinished);
+        None
     }
 
-    fn on_thread_finished(&mut self, _cur_thread: usize) {
+    fn on_thread_finished(&mut self, _cur_thread: usize) -> Option<Value> {
         self.execution_queue.push(ExecutionSeq::ThreadFinished);
+        Some(json!({"thread_finished": true}))
     }
 
     fn cleanup(&mut self) -> Option<Value> {

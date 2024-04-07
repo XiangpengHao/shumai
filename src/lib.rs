@@ -106,9 +106,13 @@ pub trait ShumaiBench: Send + Sync {
     /// it also blocks current thread until every thread is ready (i.e. issued context.wait_for_start())
     fn run(&self, context: Context<Self::Config>) -> Self::Result;
 
-    fn on_iteration_finished(&mut self, _cur_iter: usize) {}
+    fn on_iteration_finished(&mut self, _cur_iter: usize) -> Option<serde_json::Value> {
+        None
+    }
 
-    fn on_thread_finished(&mut self, _cur_thread: usize) {}
+    fn on_thread_finished(&mut self, _cur_thread: usize) -> Option<serde_json::Value> {
+        None
+    }
 
     /// clean up resources, if necessary
     fn cleanup(&mut self) -> Option<serde_json::Value>;
