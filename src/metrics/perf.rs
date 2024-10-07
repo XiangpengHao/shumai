@@ -12,8 +12,7 @@ macro_rules! perf_builder {
 
         impl PerfStatsRaw {
             pub(crate) fn new() -> PerfStatsRaw {
-                $(let $name = Builder::new()
-                    .kind($event)
+                $(let $name = Builder::new($event)
                     .inherit(true)
                     .build()
                     .expect(&format!("failed to create counter for {}", std::stringify!($name)));
@@ -76,7 +75,9 @@ perf_builder!(
     (branches, Hardware::BRANCH_INSTRUCTIONS),
     (cache_reference, Hardware::CACHE_REFERENCES),
     (cache_miss, Hardware::CACHE_MISSES),
-    (bus_cycles, Hardware::BUS_CYCLES),
+    (stalled_cycles_frontend, Hardware::STALLED_CYCLES_FRONTEND),
+    // (stalled_cycles_backend, Hardware::STALLED_CYCLES_BACKEND), // it seems AMD cpu doesn't support this
+    // (bus_cycles, Hardware::BUS_CYCLES), // it seems AMD cpu doesn't support this
     (page_faults, Software::PAGE_FAULTS),
     (context_switch, Software::CONTEXT_SWITCHES),
     (cpu_migration, Software::CPU_MIGRATIONS)
