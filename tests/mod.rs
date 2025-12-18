@@ -140,7 +140,7 @@ fn runner() {
 
         let mut rv_seq = Vec::new();
 
-        while benchmark.execution_queue.len() > 0 {
+        while !benchmark.execution_queue.is_empty() {
             rv_seq.push(benchmark.execution_queue.pop().unwrap())
         }
 
