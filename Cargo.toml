@@ -19,7 +19,7 @@ ureq = { version = "2.10.1", default-features = false, features = [
 	"json",
 ], optional = true }
 shumai-config-impl = { path = "impl", version = "0.2" }
-pprof = { version = "0.13", features = ["flamegraph"], optional = true }
+pprof = { version = "0.15", features = ["flamegraph"], optional = true }
 colored = "2.1.0"
 chrono = { version = "0.4.38", default-features = false, features = ["clock"] }
 regex = { version = "1.11.0", default-features = false, features = ["std"] }
